@@ -1,0 +1,1661 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "request": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "TCAD agent request",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "command": {
+              "const": "capabilities"
+            },
+            "args": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "command": {
+              "const": "doctor"
+            },
+            "args": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "command": {
+              "const": "schema"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "target": {
+                  "enum": [
+                    "all",
+                    "request",
+                    "plan",
+                    "room-map",
+                    "room-spec"
+                  ]
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "command": {
+              "const": "info"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "input": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "layout": {
+                  "type": "string",
+                  "minLength": 1,
+                  "default": "Model"
+                }
+              },
+              "required": [
+                "input"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "command": {
+              "const": "query"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "input": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "layout": {
+                  "type": "string",
+                  "minLength": 1,
+                  "default": "Model"
+                },
+                "types": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "layer": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "text": {
+                  "type": "string"
+                },
+                "handles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 1,
+                  "maxItems": 10000
+                },
+                "bbox": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 4,
+                  "maxItems": 4
+                },
+                "offset": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "limit": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10000
+                }
+              },
+              "required": [
+                "input"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "command": {
+              "const": "measure"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "input": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "layout": {
+                  "type": "string",
+                  "minLength": 1,
+                  "default": "Model"
+                },
+                "handles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 1,
+                  "maxItems": 10000
+                }
+              },
+              "required": [
+                "input",
+                "handles"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "command": {
+              "const": "new"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "output": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "units": {
+                  "enum": [
+                    "mm",
+                    "cm",
+                    "m",
+                    "in",
+                    "ft",
+                    "unitless"
+                  ]
+                },
+                "overwrite": {
+                  "type": "boolean"
+                },
+                "dry_run": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "output"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "command": {
+              "const": "apply"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "input": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "output": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "plan": {
+                  "type": "object"
+                },
+                "overwrite": {
+                  "type": "boolean"
+                },
+                "dry_run": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "output",
+                "plan"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "command": {
+              "const": "render"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "input": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "layout": {
+                  "type": "string",
+                  "minLength": 1,
+                  "default": "Model"
+                },
+                "output": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "input",
+                "output"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "command": {
+              "const": "convert"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "input": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "output": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "backend": {
+                  "type": "string",
+                  "enum": [
+                    "auto",
+                    "libredwg",
+                    "oda"
+                  ],
+                  "default": "auto"
+                },
+                "overwrite": {
+                  "type": "boolean"
+                },
+                "timeout": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 600
+                }
+              },
+              "required": [
+                "input",
+                "output"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "command": {
+              "const": "room-extract"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "input": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "mapping": {
+                  "type": "object"
+                },
+                "output": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "input",
+                "mapping"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "command": {
+              "const": "room-model"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "spec": {
+                  "type": "object"
+                },
+                "output": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "spec",
+                "output"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "command": {
+              "const": "room-verify"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "spec": {
+                  "type": "object"
+                },
+                "model": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "tolerance_mm": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": [
+                "spec",
+                "model"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "plan": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "AgentCAD plan version 1",
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1,
+          "type": "integer"
+        },
+        "units": {
+          "enum": [
+            "mm",
+            "cm",
+            "m",
+            "in",
+            "ft",
+            "unitless"
+          ]
+        },
+        "dxf_version": {
+          "enum": [
+            "R2010",
+            "R2013",
+            "R2018"
+          ]
+        },
+        "operations": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "layer"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "color": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 255
+                  }
+                },
+                "required": [
+                  "op",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "add"
+                  },
+                  "entity": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "const": "LINE"
+                          },
+                          "layer": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          },
+                          "color": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          },
+                          "start": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 2,
+                            "maxItems": 3
+                          },
+                          "end": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 2,
+                            "maxItems": 3
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "start",
+                          "end"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "const": "CIRCLE"
+                          },
+                          "layer": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          },
+                          "color": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          },
+                          "center": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 2,
+                            "maxItems": 3
+                          },
+                          "radius": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "center",
+                          "radius"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "const": "ARC"
+                          },
+                          "layer": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          },
+                          "color": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          },
+                          "center": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 2,
+                            "maxItems": 3
+                          },
+                          "radius": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "start_angle": {
+                            "type": "number"
+                          },
+                          "end_angle": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "center",
+                          "radius",
+                          "start_angle",
+                          "end_angle"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "const": "LWPOLYLINE"
+                          },
+                          "layer": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          },
+                          "color": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              },
+                              "minItems": 2,
+                              "maxItems": 2
+                            },
+                            "minItems": 2,
+                            "maxItems": 100000
+                          },
+                          "closed": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "points"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "const": "TEXT"
+                          },
+                          "layer": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          },
+                          "color": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          },
+                          "text": {
+                            "type": "string",
+                            "maxLength": 1000000
+                          },
+                          "insert": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 2,
+                            "maxItems": 3
+                          },
+                          "height": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "rotation": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "text",
+                          "insert",
+                          "height"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "const": "MTEXT"
+                          },
+                          "layer": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          },
+                          "color": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          },
+                          "text": {
+                            "type": "string",
+                            "maxLength": 1000000
+                          },
+                          "insert": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 2,
+                            "maxItems": 3
+                          },
+                          "char_height": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "width": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "text",
+                          "insert",
+                          "char_height"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "const": "RECTANGLE"
+                          },
+                          "layer": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          },
+                          "color": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          },
+                          "insert": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 2,
+                            "maxItems": 3
+                          },
+                          "width": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "height": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "insert",
+                          "width",
+                          "height"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "op",
+                  "entity"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "update"
+                  },
+                  "handles": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[0-9A-Fa-f]+$",
+                      "maxLength": 32
+                    },
+                    "minItems": 1,
+                    "maxItems": 10000,
+                    "uniqueItems": true
+                  },
+                  "attributes": {
+                    "type": "object",
+                    "properties": {
+                      "layer": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                      },
+                      "color": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 255
+                      },
+                      "text": {
+                        "type": "string",
+                        "maxLength": 1000000
+                      }
+                    },
+                    "required": [],
+                    "additionalProperties": false,
+                    "minProperties": 1
+                  }
+                },
+                "required": [
+                  "op",
+                  "handles",
+                  "attributes"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "delete"
+                  },
+                  "handles": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[0-9A-Fa-f]+$",
+                      "maxLength": 32
+                    },
+                    "minItems": 1,
+                    "maxItems": 10000,
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "op",
+                  "handles"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "transform"
+                  },
+                  "handles": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[0-9A-Fa-f]+$",
+                      "maxLength": 32
+                    },
+                    "minItems": 1,
+                    "maxItems": 10000,
+                    "uniqueItems": true
+                  },
+                  "translate": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 3
+                  },
+                  "rotate": {
+                    "type": "number"
+                  },
+                  "scale": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "op",
+                  "handles"
+                ],
+                "additionalProperties": false,
+                "anyOf": [
+                  {
+                    "required": [
+                      "translate"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "rotate"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "scale"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "version",
+        "operations"
+      ],
+      "additionalProperties": false
+    },
+    "room-map": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Explicit rectangular room role mapping",
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1,
+          "type": "integer"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "layout": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "units": {
+          "enum": [
+            "mm",
+            "cm",
+            "m",
+            "in",
+            "ft"
+          ]
+        },
+        "axes": {
+          "const": "drawing_x_length_y_width"
+        },
+        "height_meaning": {
+          "const": "finished_floor_to_ceiling_underside"
+        },
+        "roles": {
+          "type": "object",
+          "properties": {
+            "footprint": {
+              "type": "object",
+              "properties": {
+                "layer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "handle": {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]+$"
+                }
+              },
+              "required": [],
+              "additionalProperties": false,
+              "anyOf": [
+                {
+                  "required": [
+                    "layer"
+                  ]
+                },
+                {
+                  "required": [
+                    "handle"
+                  ]
+                }
+              ]
+            },
+            "height": {
+              "type": "object",
+              "properties": {
+                "layer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "handle": {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]+$"
+                }
+              },
+              "required": [],
+              "additionalProperties": false,
+              "anyOf": [
+                {
+                  "required": [
+                    "layer"
+                  ]
+                },
+                {
+                  "required": [
+                    "handle"
+                  ]
+                }
+              ]
+            },
+            "wall_thickness": {
+              "type": "object",
+              "properties": {
+                "layer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "handle": {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]+$"
+                }
+              },
+              "required": [],
+              "additionalProperties": false,
+              "anyOf": [
+                {
+                  "required": [
+                    "layer"
+                  ]
+                },
+                {
+                  "required": [
+                    "handle"
+                  ]
+                }
+              ]
+            },
+            "floor_thickness": {
+              "type": "object",
+              "properties": {
+                "layer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "handle": {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]+$"
+                }
+              },
+              "required": [],
+              "additionalProperties": false,
+              "anyOf": [
+                {
+                  "required": [
+                    "layer"
+                  ]
+                },
+                {
+                  "required": [
+                    "handle"
+                  ]
+                }
+              ]
+            },
+            "ceiling_thickness": {
+              "type": "object",
+              "properties": {
+                "layer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "handle": {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]+$"
+                }
+              },
+              "required": [],
+              "additionalProperties": false,
+              "anyOf": [
+                {
+                  "required": [
+                    "layer"
+                  ]
+                },
+                {
+                  "required": [
+                    "handle"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "footprint",
+            "height",
+            "wall_thickness",
+            "floor_thickness",
+            "ceiling_thickness"
+          ],
+          "additionalProperties": false
+        },
+        "openings": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "kind": {
+                "enum": [
+                  "door",
+                  "window"
+                ]
+              },
+              "wall": {
+                "enum": [
+                  "south",
+                  "north",
+                  "west",
+                  "east"
+                ]
+              },
+              "plan": {
+                "type": "object",
+                "properties": {
+                  "layer": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "handle": {
+                    "type": "string",
+                    "pattern": "^[0-9a-fA-F]+$"
+                  }
+                },
+                "required": [],
+                "additionalProperties": false,
+                "anyOf": [
+                  {
+                    "required": [
+                      "layer"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "handle"
+                    ]
+                  }
+                ]
+              },
+              "elevation": {
+                "type": "object",
+                "properties": {
+                  "layer": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "handle": {
+                    "type": "string",
+                    "pattern": "^[0-9a-fA-F]+$"
+                  }
+                },
+                "required": [],
+                "additionalProperties": false,
+                "anyOf": [
+                  {
+                    "required": [
+                      "layer"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "handle"
+                    ]
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "wall",
+              "plan",
+              "elevation"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "dimension_labels": {
+          "type": "object",
+          "properties": {
+            "length": {
+              "type": "object",
+              "properties": {
+                "layer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "handle": {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]+$"
+                }
+              },
+              "required": [],
+              "additionalProperties": false,
+              "anyOf": [
+                {
+                  "required": [
+                    "layer"
+                  ]
+                },
+                {
+                  "required": [
+                    "handle"
+                  ]
+                }
+              ]
+            },
+            "width": {
+              "type": "object",
+              "properties": {
+                "layer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "handle": {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]+$"
+                }
+              },
+              "required": [],
+              "additionalProperties": false,
+              "anyOf": [
+                {
+                  "required": [
+                    "layer"
+                  ]
+                },
+                {
+                  "required": [
+                    "handle"
+                  ]
+                }
+              ]
+            },
+            "height": {
+              "type": "object",
+              "properties": {
+                "layer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "handle": {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]+$"
+                }
+              },
+              "required": [],
+              "additionalProperties": false,
+              "anyOf": [
+                {
+                  "required": [
+                    "layer"
+                  ]
+                },
+                {
+                  "required": [
+                    "handle"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "length",
+            "width",
+            "height"
+          ],
+          "additionalProperties": false
+        },
+        "units_label": {
+          "type": "object",
+          "properties": {
+            "layer": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "handle": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]+$"
+            }
+          },
+          "required": [],
+          "additionalProperties": false,
+          "anyOf": [
+            {
+              "required": [
+                "layer"
+              ]
+            },
+            {
+              "required": [
+                "handle"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "name",
+        "units",
+        "axes",
+        "height_meaning",
+        "roles",
+        "openings"
+      ],
+      "additionalProperties": false
+    },
+    "room-spec": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Extracted rectangular room specification",
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": "room-1.0"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "units": {
+          "enum": [
+            "mm",
+            "cm",
+            "m",
+            "in",
+            "ft"
+          ]
+        },
+        "drawing_unit_to_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "origin": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "dimensions": {
+          "type": "object",
+          "properties": {
+            "length": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "width": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "height": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "length",
+            "width",
+            "height"
+          ],
+          "additionalProperties": false
+        },
+        "construction": {
+          "type": "object",
+          "properties": {
+            "wall_thickness": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "floor_thickness": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "ceiling_thickness": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "wall_thickness",
+            "floor_thickness",
+            "ceiling_thickness"
+          ],
+          "additionalProperties": false
+        },
+        "openings": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "kind": {
+                "enum": [
+                  "door",
+                  "window"
+                ]
+              },
+              "wall": {
+                "enum": [
+                  "south",
+                  "north",
+                  "west",
+                  "east"
+                ]
+              },
+              "offset": {
+                "type": "number",
+                "minimum": 0
+              },
+              "width": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "height": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "sill": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "wall",
+              "offset",
+              "width",
+              "height",
+              "sill"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "evidence": {
+          "type": "object"
+        },
+        "source": {
+          "type": "object"
+        },
+        "checks": {
+          "type": "array"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "name",
+        "units",
+        "drawing_unit_to_m",
+        "origin",
+        "dimensions",
+        "construction",
+        "openings"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

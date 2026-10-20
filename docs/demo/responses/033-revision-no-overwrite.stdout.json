@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": false,
+  "error": {
+    "code": "OUTPUT_EXISTS",
+    "message": "Output exists; set overwrite explicitly.",
+    "details": {
+      "path": "revised-complete-room.dxf"
+    }
+  }
+}

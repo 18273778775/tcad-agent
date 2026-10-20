@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "entities": [
+      {
+        "handle": "8D",
+        "type": "LINE",
+        "layer": "ROOM_HEIGHT",
+        "color": 256,
+        "start": [
+          9500.0,
+          0.0,
+          0.0
+        ],
+        "end": [
+          9500.0,
+          3000.0,
+          0.0
+        ],
+        "coordinate_system": "WCS",
+        "bounds": {
+          "min": [
+            9500.0,
+            0.0,
+            0.0
+          ],
+          "max": [
+            9500.0,
+            3000.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      }
+    ],
+    "total": 1,
+    "offset": 0,
+    "limit": 100,
+    "layout": "Model",
+    "units": {
+      "name": "mm",
+      "code": 4
+    },
+    "warnings": [
+      "Bounds are approximate geometric extents; text extents depend on available fonts."
+    ],
+    "source": "fixtures/controlled-complete-room.dxf"
+  }
+}

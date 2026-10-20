@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+artifacts/
+.tools/
+.env
+.env.*
+!.env.example
+# Original third-party distribution is analysis input, not project source.
+cad快速看图破解版/

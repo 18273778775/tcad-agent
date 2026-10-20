@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "operations": [
+    {
+      "op": "update",
+      "handles": [
+        "E3"
+      ],
+      "attributes": {
+        "text": "9000 mm"
+      }
+    }
+  ]
+}

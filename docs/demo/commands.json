@@ -1,0 +1,1041 @@
+{
+  "python": "<python>",
+  "converter": "<libredwg>/dwg2dxf.exe",
+  "commands": [
+    {
+      "name": "capabilities",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "capabilities"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/001-capabilities.stdout.json",
+      "stderr": "responses/001-capabilities.stderr.txt"
+    },
+    {
+      "name": "schema",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "schema"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/002-schema.stdout.json",
+      "stderr": "responses/002-schema.stderr.txt"
+    },
+    {
+      "name": "doctor",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "doctor"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/003-doctor.stdout.json",
+      "stderr": "responses/003-doctor.stderr.txt"
+    },
+    {
+      "name": "dxf-info",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "info",
+        "fixtures/controlled-complete-room.dxf"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/004-dxf-info.stdout.json",
+      "stderr": "responses/004-dxf-info.stderr.txt"
+    },
+    {
+      "name": "dxf-all-page-0",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "fixtures/controlled-complete-room.dxf",
+        "--offset",
+        "0",
+        "--limit",
+        "25"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/005-dxf-all-page-0.stdout.json",
+      "stderr": "responses/005-dxf-all-page-0.stderr.txt"
+    },
+    {
+      "name": "dxf-all-page-25",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "fixtures/controlled-complete-room.dxf",
+        "--offset",
+        "25",
+        "--limit",
+        "25"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/006-dxf-all-page-25.stdout.json",
+      "stderr": "responses/006-dxf-all-page-25.stderr.txt"
+    },
+    {
+      "name": "dxf-all-page-50",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "fixtures/controlled-complete-room.dxf",
+        "--offset",
+        "50",
+        "--limit",
+        "25"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/007-dxf-all-page-50.stdout.json",
+      "stderr": "responses/007-dxf-all-page-50.stderr.txt"
+    },
+    {
+      "name": "dxf-footprint-query",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "fixtures/controlled-complete-room.dxf",
+        "--layer",
+        "ROOM_CLEAR",
+        "--limit",
+        "10"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/008-dxf-footprint-query.stdout.json",
+      "stderr": "responses/008-dxf-footprint-query.stderr.txt"
+    },
+    {
+      "name": "dxf-footprint-measure",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "measure",
+        "fixtures/controlled-complete-room.dxf",
+        "--handle",
+        "8B"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/009-dxf-footprint-measure.stdout.json",
+      "stderr": "responses/009-dxf-footprint-measure.stderr.txt"
+    },
+    {
+      "name": "dxf-geometric-dimensions-measure",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "measure",
+        "fixtures/controlled-complete-room.dxf",
+        "--handle",
+        "8D",
+        "--handle",
+        "8F",
+        "--handle",
+        "91",
+        "--handle",
+        "93",
+        "--handle",
+        "95",
+        "--handle",
+        "97"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/010-dxf-geometric-dimensions-measure.stdout.json",
+      "stderr": "responses/010-dxf-geometric-dimensions-measure.stderr.txt"
+    },
+    {
+      "name": "dxf-extract",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-extract",
+        "fixtures/controlled-complete-room.dxf",
+        "--mapping",
+        "fixtures/room-map.json",
+        "--output",
+        "before-dxf.room.json"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/011-dxf-extract.stdout.json",
+      "stderr": "responses/011-dxf-extract.stderr.txt"
+    },
+    {
+      "name": "dxf-render",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "render",
+        "fixtures/controlled-complete-room.dxf",
+        "--output",
+        "previews/before-dxf.svg"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/012-dxf-render.stdout.json",
+      "stderr": "responses/012-dxf-render.stderr.txt"
+    },
+    {
+      "name": "dwg-info",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "info",
+        "fixtures/controlled-complete-room.dwg"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/013-dwg-info.stdout.json",
+      "stderr": "responses/013-dwg-info.stderr.txt"
+    },
+    {
+      "name": "dwg-all-page-0",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "fixtures/controlled-complete-room.dwg",
+        "--offset",
+        "0",
+        "--limit",
+        "25"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/014-dwg-all-page-0.stdout.json",
+      "stderr": "responses/014-dwg-all-page-0.stderr.txt"
+    },
+    {
+      "name": "dwg-all-page-25",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "fixtures/controlled-complete-room.dwg",
+        "--offset",
+        "25",
+        "--limit",
+        "25"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/015-dwg-all-page-25.stdout.json",
+      "stderr": "responses/015-dwg-all-page-25.stderr.txt"
+    },
+    {
+      "name": "dwg-all-page-50",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "fixtures/controlled-complete-room.dwg",
+        "--offset",
+        "50",
+        "--limit",
+        "25"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/016-dwg-all-page-50.stdout.json",
+      "stderr": "responses/016-dwg-all-page-50.stderr.txt"
+    },
+    {
+      "name": "dwg-footprint-query",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "fixtures/controlled-complete-room.dwg",
+        "--layer",
+        "ROOM_CLEAR",
+        "--limit",
+        "10"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/017-dwg-footprint-query.stdout.json",
+      "stderr": "responses/017-dwg-footprint-query.stderr.txt"
+    },
+    {
+      "name": "dwg-footprint-measure",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "measure",
+        "fixtures/controlled-complete-room.dwg",
+        "--handle",
+        "47"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/018-dwg-footprint-measure.stdout.json",
+      "stderr": "responses/018-dwg-footprint-measure.stderr.txt"
+    },
+    {
+      "name": "dwg-geometric-dimensions-measure",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "measure",
+        "fixtures/controlled-complete-room.dwg",
+        "--handle",
+        "48",
+        "--handle",
+        "49",
+        "--handle",
+        "4A",
+        "--handle",
+        "4B",
+        "--handle",
+        "4C",
+        "--handle",
+        "4D"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/019-dwg-geometric-dimensions-measure.stdout.json",
+      "stderr": "responses/019-dwg-geometric-dimensions-measure.stderr.txt"
+    },
+    {
+      "name": "dwg-extract",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-extract",
+        "fixtures/controlled-complete-room.dwg",
+        "--mapping",
+        "fixtures/room-map.json",
+        "--output",
+        "before-dwg.room.json"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/020-dwg-extract.stdout.json",
+      "stderr": "responses/020-dwg-extract.stderr.txt"
+    },
+    {
+      "name": "dwg-render",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "render",
+        "fixtures/controlled-complete-room.dwg",
+        "--output",
+        "previews/before-dwg.svg"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/021-dwg-render.stdout.json",
+      "stderr": "responses/021-dwg-render.stderr.txt"
+    },
+    {
+      "name": "before-model-glb",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-model",
+        "--spec",
+        "before-dwg.room.json",
+        "--output",
+        "models/before.glb"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/022-before-model-glb.stdout.json",
+      "stderr": "responses/022-before-model-glb.stderr.txt"
+    },
+    {
+      "name": "before-verify-glb",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-verify",
+        "--spec",
+        "before-dwg.room.json",
+        "--model",
+        "models/before.glb",
+        "--tolerance-mm",
+        "0.01"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/023-before-verify-glb.stdout.json",
+      "stderr": "responses/023-before-verify-glb.stderr.txt"
+    },
+    {
+      "name": "before-model-obj",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-model",
+        "--spec",
+        "before-dwg.room.json",
+        "--output",
+        "models/before.obj"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/024-before-model-obj.stdout.json",
+      "stderr": "responses/024-before-model-obj.stderr.txt"
+    },
+    {
+      "name": "before-verify-obj",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-verify",
+        "--spec",
+        "before-dwg.room.json",
+        "--model",
+        "models/before.obj",
+        "--tolerance-mm",
+        "0.01"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/025-before-verify-obj.stdout.json",
+      "stderr": "responses/025-before-verify-obj.stderr.txt"
+    },
+    {
+      "name": "before-model-dxf",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-model",
+        "--spec",
+        "before-dwg.room.json",
+        "--output",
+        "models/before.dxf"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/026-before-model-dxf.stdout.json",
+      "stderr": "responses/026-before-model-dxf.stderr.txt"
+    },
+    {
+      "name": "before-verify-dxf",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-verify",
+        "--spec",
+        "before-dwg.room.json",
+        "--model",
+        "models/before.dxf",
+        "--tolerance-mm",
+        "0.01"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/027-before-verify-dxf.stdout.json",
+      "stderr": "responses/027-before-verify-dxf.stderr.txt"
+    },
+    {
+      "name": "revision-source-page-0",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "fixtures/controlled-complete-room.dwg",
+        "--offset",
+        "0",
+        "--limit",
+        "25"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/028-revision-source-page-0.stdout.json",
+      "stderr": "responses/028-revision-source-page-0.stderr.txt"
+    },
+    {
+      "name": "revision-source-page-25",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "fixtures/controlled-complete-room.dwg",
+        "--offset",
+        "25",
+        "--limit",
+        "25"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/029-revision-source-page-25.stdout.json",
+      "stderr": "responses/029-revision-source-page-25.stderr.txt"
+    },
+    {
+      "name": "revision-source-page-50",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "fixtures/controlled-complete-room.dwg",
+        "--offset",
+        "50",
+        "--limit",
+        "25"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/030-revision-source-page-50.stdout.json",
+      "stderr": "responses/030-revision-source-page-50.stderr.txt"
+    },
+    {
+      "name": "revision-dry-run",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "apply",
+        "--input",
+        "fixtures/controlled-complete-room.dwg",
+        "--plan",
+        "plans/revise-length-width-height.json",
+        "--output",
+        "revised-complete-room.dxf",
+        "--dry-run"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/031-revision-dry-run.stdout.json",
+      "stderr": "responses/031-revision-dry-run.stderr.txt"
+    },
+    {
+      "name": "revision-apply",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "apply",
+        "--input",
+        "fixtures/controlled-complete-room.dwg",
+        "--plan",
+        "plans/revise-length-width-height.json",
+        "--output",
+        "revised-complete-room.dxf"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/032-revision-apply.stdout.json",
+      "stderr": "responses/032-revision-apply.stderr.txt"
+    },
+    {
+      "name": "revision-no-overwrite",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "apply",
+        "--input",
+        "fixtures/controlled-complete-room.dwg",
+        "--plan",
+        "plans/revise-length-width-height.json",
+        "--output",
+        "revised-complete-room.dxf"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 1,
+      "expected_error_code": "OUTPUT_EXISTS",
+      "stdout": "responses/033-revision-no-overwrite.stdout.json",
+      "stderr": "responses/033-revision-no-overwrite.stderr.txt"
+    },
+    {
+      "name": "after-extract",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-extract",
+        "revised-complete-room.dxf",
+        "--mapping",
+        "fixtures/room-map.json",
+        "--output",
+        "after.room.json"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/034-after-extract.stdout.json",
+      "stderr": "responses/034-after-extract.stderr.txt"
+    },
+    {
+      "name": "after-all-page-0",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "revised-complete-room.dxf",
+        "--offset",
+        "0",
+        "--limit",
+        "25"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/035-after-all-page-0.stdout.json",
+      "stderr": "responses/035-after-all-page-0.stderr.txt"
+    },
+    {
+      "name": "after-all-page-25",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "revised-complete-room.dxf",
+        "--offset",
+        "25",
+        "--limit",
+        "25"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/036-after-all-page-25.stdout.json",
+      "stderr": "responses/036-after-all-page-25.stderr.txt"
+    },
+    {
+      "name": "after-all-page-50",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "revised-complete-room.dxf",
+        "--offset",
+        "50",
+        "--limit",
+        "25"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/037-after-all-page-50.stdout.json",
+      "stderr": "responses/037-after-all-page-50.stderr.txt"
+    },
+    {
+      "name": "after-footprint-query",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "revised-complete-room.dxf",
+        "--layer",
+        "ROOM_CLEAR",
+        "--limit",
+        "10"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/038-after-footprint-query.stdout.json",
+      "stderr": "responses/038-after-footprint-query.stderr.txt"
+    },
+    {
+      "name": "after-footprint-measure",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "measure",
+        "revised-complete-room.dxf",
+        "--handle",
+        "9A"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/039-after-footprint-measure.stdout.json",
+      "stderr": "responses/039-after-footprint-measure.stderr.txt"
+    },
+    {
+      "name": "after-geometric-dimensions-measure",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "measure",
+        "revised-complete-room.dxf",
+        "--handle",
+        "9B",
+        "--handle",
+        "9C",
+        "--handle",
+        "9D",
+        "--handle",
+        "9E",
+        "--handle",
+        "9F",
+        "--handle",
+        "A0"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/040-after-geometric-dimensions-measure.stdout.json",
+      "stderr": "responses/040-after-geometric-dimensions-measure.stderr.txt"
+    },
+    {
+      "name": "after-info",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "info",
+        "revised-complete-room.dxf"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/041-after-info.stdout.json",
+      "stderr": "responses/041-after-info.stderr.txt"
+    },
+    {
+      "name": "after-render",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "render",
+        "revised-complete-room.dxf",
+        "--output",
+        "previews/after.svg"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/042-after-render.stdout.json",
+      "stderr": "responses/042-after-render.stderr.txt"
+    },
+    {
+      "name": "after-model-glb",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-model",
+        "--spec",
+        "after.room.json",
+        "--output",
+        "models/after.glb"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/043-after-model-glb.stdout.json",
+      "stderr": "responses/043-after-model-glb.stderr.txt"
+    },
+    {
+      "name": "after-verify-glb",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-verify",
+        "--spec",
+        "after.room.json",
+        "--model",
+        "models/after.glb",
+        "--tolerance-mm",
+        "0.01"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/044-after-verify-glb.stdout.json",
+      "stderr": "responses/044-after-verify-glb.stderr.txt"
+    },
+    {
+      "name": "after-model-obj",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-model",
+        "--spec",
+        "after.room.json",
+        "--output",
+        "models/after.obj"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/045-after-model-obj.stdout.json",
+      "stderr": "responses/045-after-model-obj.stderr.txt"
+    },
+    {
+      "name": "after-verify-obj",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-verify",
+        "--spec",
+        "after.room.json",
+        "--model",
+        "models/after.obj",
+        "--tolerance-mm",
+        "0.01"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/046-after-verify-obj.stdout.json",
+      "stderr": "responses/046-after-verify-obj.stderr.txt"
+    },
+    {
+      "name": "after-model-dxf",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-model",
+        "--spec",
+        "after.room.json",
+        "--output",
+        "models/after.dxf"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/047-after-model-dxf.stdout.json",
+      "stderr": "responses/047-after-model-dxf.stderr.txt"
+    },
+    {
+      "name": "after-verify-dxf",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-verify",
+        "--spec",
+        "after.room.json",
+        "--model",
+        "models/after.dxf",
+        "--tolerance-mm",
+        "0.01"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/048-after-verify-dxf.stdout.json",
+      "stderr": "responses/048-after-verify-dxf.stderr.txt"
+    },
+    {
+      "name": "rollback",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "apply",
+        "--input",
+        "fixtures/controlled-complete-room.dwg",
+        "--plan",
+        "plans/rollback-invalid-handle.json",
+        "--output",
+        "must-not-exist.dxf"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 1,
+      "expected_error_code": "ENTITY_NOT_FOUND",
+      "stdout": "responses/049-rollback.stdout.json",
+      "stderr": "responses/049-rollback.stderr.txt"
+    },
+    {
+      "name": "missing-height-query",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "fixtures/controlled-complete-room.dxf",
+        "--layer",
+        "ROOM_HEIGHT"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/050-missing-height-query.stdout.json",
+      "stderr": "responses/050-missing-height-query.stderr.txt"
+    },
+    {
+      "name": "missing-height-apply",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "apply",
+        "--input",
+        "fixtures/controlled-complete-room.dxf",
+        "--plan",
+        "plans/missing-height.json",
+        "--output",
+        "fixtures/missing-height.dxf"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/051-missing-height-apply.stdout.json",
+      "stderr": "responses/051-missing-height-apply.stderr.txt"
+    },
+    {
+      "name": "missing-height-extract",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-extract",
+        "fixtures/missing-height.dxf",
+        "--mapping",
+        "fixtures/room-map.json",
+        "--output",
+        "missing-height.room.json"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 1,
+      "expected_error_code": "ROOM_EVIDENCE_MISSING",
+      "stdout": "responses/052-missing-height-extract.stdout.json",
+      "stderr": "responses/052-missing-height-extract.stderr.txt"
+    },
+    {
+      "name": "misleading-height-text-query",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "query",
+        "fixtures/controlled-complete-room.dxf",
+        "--layer",
+        "DIM_HEIGHT"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/053-misleading-height-text-query.stdout.json",
+      "stderr": "responses/053-misleading-height-text-query.stderr.txt"
+    },
+    {
+      "name": "misleading-height-text-apply",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "apply",
+        "--input",
+        "fixtures/controlled-complete-room.dxf",
+        "--plan",
+        "plans/misleading-height-text.json",
+        "--output",
+        "fixtures/misleading-height-text.dxf"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 0,
+      "expected_error_code": null,
+      "stdout": "responses/054-misleading-height-text-apply.stdout.json",
+      "stderr": "responses/054-misleading-height-text-apply.stderr.txt"
+    },
+    {
+      "name": "misleading-height-text-extract",
+      "command": [
+        "<python>",
+        "-m",
+        "agentcad",
+        "room-extract",
+        "fixtures/misleading-height-text.dxf",
+        "--mapping",
+        "fixtures/room-map.json",
+        "--output",
+        "misleading-height-text.room.json"
+      ],
+      "cwd": "<workspace>",
+      "returncode": 1,
+      "expected_error_code": "ROOM_DIMENSION_MISMATCH",
+      "stdout": "responses/055-misleading-height-text-extract.stdout.json",
+      "stderr": "responses/055-misleading-height-text-extract.stderr.txt"
+    }
+  ],
+  "publication_paths_normalized": true,
+  "publication_note": "Sanitized public copy; execution paths normalized; original numeric evidence and recorded artifact hashes retained. See README.md."
+}

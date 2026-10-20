@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "input": "fixtures/controlled-complete-room.dwg",
+    "output": "previews/before-dwg.svg",
+    "format": "svg",
+    "layout": "Model",
+    "entity_count": 71,
+    "warnings": [
+      "SVG is fitted to a preview page of at most 420 mm per side; its physical size is not drawing scale.",
+      "Preview uses a 2D top projection; ACIS solids and some 3D features are unsupported.",
+      "Text appearance depends on installed fonts; substitutions may change its appearance.",
+      "External references are not resolved; linked raster images are shown as rectangles.",
+      "DWG conversion may lose unsupported entities or properties; verify critical geometry."
+    ],
+    "source": "fixtures/controlled-complete-room.dwg",
+    "conversion": {
+      "input": "fixtures/controlled-complete-room.dwg",
+      "backend": "libredwg",
+      "format": "dxf",
+      "dxf_version": "AC1015",
+      "warnings": [
+        "DWG conversion may lose unsupported entities or properties; verify critical geometry."
+      ],
+      "diagnostics": {
+        "stdout": "Reading DWG file fixtures/controlled-complete-room.dwg\r\nWriting DXF file <temporary-file>\r\n"
+      }
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "measurements": [
+      {
+        "handle": "47",
+        "type": "LWPOLYLINE",
+        "layer": "ROOM_CLEAR",
+        "color": 256,
+        "supported": true,
+        "length": 21000.0,
+        "length_kind": "exact_centerline",
+        "closed": true,
+        "area": 27000000.0,
+        "signed_area": 27000000.0,
+        "area_kind": "absolute_algebraic_area_in_entity_plane",
+        "warnings": [
+          "Closed-polyline area is the absolute signed integral; self-intersections are not resolved into a union area."
+        ]
+      }
+    ],
+    "layout": "Model",
+    "units": {
+      "name": "mm",
+      "code": 4
+    },
+    "totals": {
+      "length": 21000.0,
+      "length_complete": true,
+      "area": 27000000.0,
+      "area_kind": "sum_of_available_entity_areas_overlaps_counted_separately",
+      "area_entity_count": 1
+    },
+    "unsupported_handles": [],
+    "warnings": [
+      "Lengths use drawing units; areas use squared drawing units. Entity areas are summed without Boolean union.",
+      "DWG conversion may lose unsupported entities or properties; verify critical geometry."
+    ],
+    "source": "fixtures/controlled-complete-room.dwg",
+    "conversion": {
+      "input": "fixtures/controlled-complete-room.dwg",
+      "backend": "libredwg",
+      "format": "dxf",
+      "dxf_version": "AC1015",
+      "warnings": [
+        "DWG conversion may lose unsupported entities or properties; verify critical geometry."
+      ],
+      "diagnostics": {
+        "stdout": "Reading DWG file fixtures/controlled-complete-room.dwg\r\nWriting DXF file <temporary-file>\r\n"
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": false,
+  "error": {
+    "code": "ENTITY_NOT_FOUND",
+    "message": "Handles are absent from the selected layout.",
+    "details": {
+      "handles": [
+        "FFFFFFFFFFFFFFFF"
+      ],
+      "layout": "Model",
+      "operation_index": 1
+    }
+  }
+}

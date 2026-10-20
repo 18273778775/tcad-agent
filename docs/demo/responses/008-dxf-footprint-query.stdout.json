@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "entities": [
+      {
+        "handle": "8B",
+        "type": "LWPOLYLINE",
+        "layer": "ROOM_CLEAR",
+        "color": 256,
+        "points": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            6000.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            6000.0,
+            4500.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            4500.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "point_format": "x,y,start_width,end_width,bulge",
+        "closed": true,
+        "elevation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "coordinate_system": "OCS",
+        "bounds": {
+          "min": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "max": [
+            6000.0,
+            4500.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      }
+    ],
+    "total": 1,
+    "offset": 0,
+    "limit": 10,
+    "layout": "Model",
+    "units": {
+      "name": "mm",
+      "code": 4
+    },
+    "warnings": [
+      "Bounds are approximate geometric extents; text extents depend on available fonts."
+    ],
+    "source": "fixtures/controlled-complete-room.dxf"
+  }
+}

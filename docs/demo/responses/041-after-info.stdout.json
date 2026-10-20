@@ -1,0 +1,247 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "path": "revised-complete-room.dxf",
+    "dxf_version": "AC1015",
+    "units": {
+      "name": "mm",
+      "code": 4
+    },
+    "layout": "Model",
+    "layouts": [
+      "Model",
+      "Layout1"
+    ],
+    "entity_count": 71,
+    "entity_types": {
+      "ARC": 1,
+      "LINE": 46,
+      "LWPOLYLINE": 9,
+      "TEXT": 15
+    },
+    "entity_layers": {
+      "CEILING_THICKNESS": 1,
+      "CONSTRUCTION_LABEL": 1,
+      "DIM_HEIGHT": 1,
+      "DIM_LENGTH": 1,
+      "DIM_LINES": 14,
+      "DIM_WIDTH": 1,
+      "DOOR_DETAIL": 3,
+      "DOOR_ELEV": 1,
+      "DOOR_PLAN": 1,
+      "DRAWING_UNITS": 1,
+      "ELEVATION_OUTLINE": 2,
+      "FLOOR_DATUM": 2,
+      "FLOOR_THICKNESS": 1,
+      "LEVEL_LABEL": 2,
+      "OPENING_LABEL": 2,
+      "ROOM_CLEAR": 1,
+      "ROOM_HEIGHT": 1,
+      "ROOM_LABEL": 1,
+      "SHEET_NOTE": 1,
+      "SHEET_TITLE": 1,
+      "SLAB_OUTLINE": 4,
+      "VIEW_LABEL": 3,
+      "WALL_OUTLINE": 16,
+      "WALL_THICKNESS": 1,
+      "WINDOW_DETAIL": 6,
+      "WINDOW_ELEV": 1,
+      "WINDOW_PLAN": 1
+    },
+    "layers": [
+      {
+        "name": "0",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "CEILING_THICKNESS",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "CONSTRUCTION_LABEL",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "DIM_HEIGHT",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "DIM_LENGTH",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "DIM_LINES",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "DIM_WIDTH",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "DOOR_DETAIL",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "DOOR_ELEV",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "DOOR_PLAN",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "DRAWING_UNITS",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "ELEVATION_OUTLINE",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "FLOOR_DATUM",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "FLOOR_THICKNESS",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "LEVEL_LABEL",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "OPENING_LABEL",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "ROOM_CLEAR",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "ROOM_HEIGHT",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "ROOM_LABEL",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "SHEET_NOTE",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "SHEET_TITLE",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "SLAB_OUTLINE",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "VIEW_LABEL",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "WALL_OUTLINE",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "WALL_THICKNESS",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "WINDOW_DETAIL",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "WINDOW_ELEV",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "WINDOW_PLAN",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      },
+      {
+        "name": "Defpoints",
+        "color": 7,
+        "off": false,
+        "frozen": false
+      }
+    ],
+    "bounds": {
+      "min": [
+        -1220.0,
+        -1888.867667121419,
+        0.0
+      ],
+      "max": [
+        26700.0,
+        6610.0,
+        0.0
+      ]
+    },
+    "bounds_kind": "approximate",
+    "warnings": [
+      "Bounds are approximate geometric extents; text extents depend on available fonts."
+    ],
+    "source": "revised-complete-room.dxf"
+  }
+}

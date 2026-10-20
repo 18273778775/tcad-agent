@@ -1,0 +1,107 @@
+{
+  "fixture_kind": "controlled illustrative room; not an independent construction drawing",
+  "output": "fixtures/controlled-complete-room.dwg",
+  "roundtrip_dxf": "fixtures/controlled-complete-room.roundtrip.dxf",
+  "source_instructions": "fixtures/controlled-complete-room.dwgadd.txt",
+  "provenance": "fixtures/controlled-complete-room.dwg-provenance.json",
+  "configured_json_source": "fixtures/controlled-complete-room.dwg-source.json",
+  "dwg_version": "R2000",
+  "units": "mm",
+  "insunits": 4,
+  "entity_counts": {
+    "LWPOLYLINE": 9,
+    "LINE": 46,
+    "ARC": 1,
+    "TEXT": 15
+  },
+  "validation": {
+    "all_entity_geometry_text_layers_match": true,
+    "all_layer_colors_are_7": true,
+    "audit_errors": 0,
+    "audit_fixes": 0
+  },
+  "source_configuration": {
+    "layer_color": 7,
+    "layer_count": 28
+  },
+  "tool_archive": {
+    "url": "https://github.com/LibreDWG/libredwg/releases/download/0.14/libredwg-0.14-win64.zip",
+    "sha256": "1ad7e15344d20b3426c3435b078d82fb84b35062815946b2cca9c5fc9810fea8"
+  },
+  "verified_tool_files": {
+    "examples/dwgadd.exe": "4857f30250ac0366d265c21c432bfc65aa9416642883a32c15368ed3ca4e3420",
+    "dwg2dxf.exe": "955f5f2855bc0c5a8bd7a93424ea259ab14405799638b889b2b3c5918c529e3e",
+    "dwgread.exe": "4b4e829cc545b237860f8c1359a80c48bda0e6821ac71727307f58bcdc8459c0",
+    "dwgwrite.exe": "5939d6e8e8ab9e86126de3f26d27762f32142831df2f5a6ef0ca32b3fa5ae932",
+    "libredwg-0.dll": "cc86e25e755ac225eadc839eaa232c2f2233c7a1b60fcd77b2cd1915761aef12",
+    "libiconv-2.dll": "ff31fa811f9c07cc7fdaa68c9e8bca3a7b4fdf6e0a079a58175ea58ba139c7ae",
+    "libpcre2-8-0.dll": "a499fb8a7eff453d6e4f0842576bc5171d40a1505d8f7f13fff6cee51b738a62",
+    "libpcre2-16-0.dll": "3e8dbd40f92e96ae24f7386bd129fb055865da8f55f2fb03eb7744315976942f"
+  },
+  "commands": [
+    {
+      "command": [
+        "<libredwg>/examples/dwgadd.exe",
+        "--as",
+        "r2000",
+        "-o",
+        "<temporary-dwg>/native.dwg",
+        "<temporary-dwg>/source.add"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "process_only_path_prefix": "<libredwg>"
+    },
+    {
+      "command": [
+        "<libredwg>/dwgread.exe",
+        "-O",
+        "JSON",
+        "-o",
+        "<temporary-dwg>/configured-source.json",
+        "<temporary-dwg>/native.dwg"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "\nSUCCESS\n",
+      "process_only_path_prefix": "<libredwg>"
+    },
+    {
+      "command": [
+        "<libredwg>/dwgwrite.exe",
+        "-I",
+        "JSON",
+        "--as",
+        "r2000",
+        "-o",
+        "<temporary-dwg>/fixture.dwg",
+        "<temporary-dwg>/configured-source.json"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "SUCCESS\n",
+      "process_only_path_prefix": "<libredwg>"
+    },
+    {
+      "command": [
+        "<libredwg>/dwg2dxf.exe",
+        "--as",
+        "r2000",
+        "-o",
+        "<temporary-dwg>/roundtrip.dxf",
+        "<temporary-dwg>/fixture.dwg"
+      ],
+      "exit_code": 0,
+      "stdout": "Reading DWG file <temporary-dwg>/fixture.dwg\nWriting DXF file <temporary-dwg>/roundtrip.dxf as r2000\n",
+      "stderr": "",
+      "process_only_path_prefix": "<libredwg>"
+    }
+  ],
+  "sha256": "9803677596554a2963b6d3dbfcc05df3f94e584e72d4e896498678d8f24b2555",
+  "roundtrip_sha256": "1f156bff07c02a885426a24046d23533a4bc6cbfe1a73a1b37711a6f6833970d",
+  "instructions_sha256": "eda0724827747f7586c7111d2df4b2be799481117acb228149660c33131d5768",
+  "configured_source_sha256": "31e344fcde7ed65677dbf62347b74f8105b6bfb61e5f826e3e085e52ba4eacd9",
+  "publication_paths_normalized": true,
+  "publication_note": "Sanitized public copy; execution paths normalized; original numeric evidence and recorded artifact hashes retained. See README.md."
+}

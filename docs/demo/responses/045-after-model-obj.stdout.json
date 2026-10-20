@@ -1,0 +1,208 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "written": true,
+    "output": "models/after.obj",
+    "format": "obj",
+    "model_units": "m",
+    "source_units": "mm",
+    "drawing_unit_to_m": 0.001,
+    "coordinate_frame": "local XYZ; interior southwest finished floor is (0, 0, 0)",
+    "source_origin": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "geometry_count": 11,
+    "verification": {
+      "passed": true,
+      "verified": true,
+      "model_path": "models/after.obj",
+      "source_units": "mm",
+      "drawing_unit_to_m": 0.001,
+      "tolerance_mm": 0.01,
+      "dimensions": {
+        "length": {
+          "expected_source_units": 6400.0,
+          "expected_mm": 6400.0,
+          "actual_model_units": 6.4,
+          "actual_mm": 6400.0,
+          "absolute_error_mm": 0.0,
+          "passed": true
+        },
+        "width": {
+          "expected_source_units": 4800.0,
+          "expected_mm": 4800.0,
+          "actual_model_units": 4.800000000000001,
+          "actual_mm": 4800.000000000001,
+          "absolute_error_mm": 9.094947017729282e-13,
+          "passed": true
+        },
+        "height": {
+          "expected_source_units": 3200.0,
+          "expected_mm": 3200.0,
+          "actual_model_units": 3.2,
+          "actual_mm": 3200.0,
+          "absolute_error_mm": 0.0,
+          "passed": true
+        }
+      },
+      "openings": [
+        {
+          "id": "D1",
+          "kind": "door",
+          "wall": "south",
+          "passed": true,
+          "void_clear": true,
+          "measurements": {
+            "offset": {
+              "expected_source_units": 1000.0,
+              "expected_mm": 1000.0,
+              "actual_model_units": 1.0,
+              "actual_mm": 1000.0,
+              "absolute_error_mm": 0.0,
+              "passed": true
+            },
+            "width": {
+              "expected_source_units": 900.0,
+              "expected_mm": 900.0,
+              "actual_model_units": 0.9000000000000004,
+              "actual_mm": 900.0000000000003,
+              "absolute_error_mm": 3.410605131648481e-13,
+              "passed": true
+            },
+            "height": {
+              "expected_source_units": 2100.0,
+              "expected_mm": 2100.0,
+              "actual_model_units": 2.1000000000000005,
+              "actual_mm": 2100.0000000000005,
+              "absolute_error_mm": 4.547473508864641e-13,
+              "passed": true
+            },
+            "sill": {
+              "expected_source_units": 0.0,
+              "expected_mm": 0.0,
+              "actual_model_units": 0.0,
+              "actual_mm": 0.0,
+              "absolute_error_mm": 0.0,
+              "passed": true
+            }
+          }
+        },
+        {
+          "id": "W1",
+          "kind": "window",
+          "wall": "north",
+          "passed": true,
+          "void_clear": true,
+          "measurements": {
+            "offset": {
+              "expected_source_units": 2200.0,
+              "expected_mm": 2200.0,
+              "actual_model_units": 2.2,
+              "actual_mm": 2200.0,
+              "absolute_error_mm": 0.0,
+              "passed": true
+            },
+            "width": {
+              "expected_source_units": 1600.0,
+              "expected_mm": 1600.0,
+              "actual_model_units": 1.5999999999999996,
+              "actual_mm": 1599.9999999999995,
+              "absolute_error_mm": 4.547473508864641e-13,
+              "passed": true
+            },
+            "height": {
+              "expected_source_units": 1200.0,
+              "expected_mm": 1200.0,
+              "actual_model_units": 1.2000000000000006,
+              "actual_mm": 1200.0000000000007,
+              "absolute_error_mm": 6.821210263296962e-13,
+              "passed": true
+            },
+            "sill": {
+              "expected_source_units": 900.0,
+              "expected_mm": 900.0,
+              "actual_model_units": 0.9,
+              "actual_mm": 900.0,
+              "absolute_error_mm": 0.0,
+              "passed": true
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "name": "source_and_serialized_units",
+          "passed": true
+        },
+        {
+          "name": "local_interior_origin",
+          "passed": true
+        },
+        {
+          "name": "floor_extent_and_thickness",
+          "passed": true
+        },
+        {
+          "name": "ceiling_extent_and_thickness",
+          "passed": true
+        },
+        {
+          "name": "south_wall_placement_and_thickness",
+          "passed": true
+        },
+        {
+          "name": "south_opening_count",
+          "passed": true,
+          "expected": 1,
+          "actual": 1
+        },
+        {
+          "name": "north_wall_placement_and_thickness",
+          "passed": true
+        },
+        {
+          "name": "north_opening_count",
+          "passed": true,
+          "expected": 1,
+          "actual": 1
+        },
+        {
+          "name": "west_wall_placement_and_thickness",
+          "passed": true
+        },
+        {
+          "name": "west_opening_count",
+          "passed": true,
+          "expected": 0,
+          "actual": 0
+        },
+        {
+          "name": "east_wall_placement_and_thickness",
+          "passed": true
+        },
+        {
+          "name": "east_opening_count",
+          "passed": true,
+          "expected": 0,
+          "actual": 0
+        }
+      ],
+      "model_units": "m",
+      "model_unit_to_m": 1.0,
+      "components": {
+        "count": 11,
+        "each_component_watertight": true,
+        "assembly_boolean_union": false
+      },
+      "limitations": [
+        "Verification supports named, closed, axis-aligned rectangular components.",
+        "Components are separate solids; no fused watertight assembly is claimed.",
+        "OBJ has no standardized unit field; its API coordinate contract is metres."
+      ]
+    }
+  }
+}

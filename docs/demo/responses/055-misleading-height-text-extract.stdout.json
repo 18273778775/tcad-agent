@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": false,
+  "error": {
+    "code": "ROOM_DIMENSION_MISMATCH",
+    "message": "Dimension label disagrees with actual CAD geometry.",
+    "details": {
+      "axis": "height",
+      "label": "9000 mm",
+      "geometry_value": 3000.0,
+      "absolute_error_mm": 6000.0
+    }
+  }
+}

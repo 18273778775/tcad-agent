@@ -1,0 +1,771 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "entities": [
+      {
+        "handle": "CC",
+        "type": "LINE",
+        "layer": "FLOOR_DATUM",
+        "color": 256,
+        "start": [
+          9700.0,
+          0.0,
+          0.0
+        ],
+        "end": [
+          16700.0,
+          0.0,
+          0.0
+        ],
+        "coordinate_system": "WCS",
+        "bounds": {
+          "min": [
+            9700.0,
+            0.0,
+            0.0
+          ],
+          "max": [
+            16700.0,
+            0.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "CD",
+        "type": "TEXT",
+        "layer": "VIEW_LABEL",
+        "color": 256,
+        "text": "SOUTH ELEVATION / SECTION DATUM",
+        "insert": [
+          10000.0,
+          -650.0,
+          0.0
+        ],
+        "coordinate_system": "OCS",
+        "height": 140.0,
+        "rotation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "plain_text": "SOUTH ELEVATION / SECTION DATUM",
+        "bounds": {
+          "min": [
+            10000.0,
+            -688.8676671214188,
+            0.0
+          ],
+          "max": [
+            13618.608458390177,
+            -510.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "CE",
+        "type": "TEXT",
+        "layer": "LEVEL_LABEL",
+        "color": 256,
+        "text": "FFL +/-0 / CEILING UNDERSIDE",
+        "insert": [
+          10000.0,
+          3630.0,
+          0.0
+        ],
+        "coordinate_system": "OCS",
+        "height": 120.0,
+        "rotation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "plain_text": "FFL +/-0 / CEILING UNDERSIDE",
+        "bounds": {
+          "min": [
+            10000.0,
+            3596.6848567530697,
+            0.0
+          ],
+          "max": [
+            12482.510231923601,
+            3750.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "CF",
+        "type": "LWPOLYLINE",
+        "layer": "ELEVATION_OUTLINE",
+        "color": 256,
+        "points": [
+          [
+            20000.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            26400.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            26400.0,
+            3200.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            20000.0,
+            3200.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "point_format": "x,y,start_width,end_width,bulge",
+        "closed": true,
+        "elevation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "coordinate_system": "OCS",
+        "bounds": {
+          "min": [
+            20000.0,
+            0.0,
+            0.0
+          ],
+          "max": [
+            26400.0,
+            3200.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "D0",
+        "type": "LWPOLYLINE",
+        "layer": "SLAB_OUTLINE",
+        "color": 256,
+        "points": [
+          [
+            19800.0,
+            -150.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            26600.0,
+            -150.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            26600.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            19800.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "point_format": "x,y,start_width,end_width,bulge",
+        "closed": true,
+        "elevation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "coordinate_system": "OCS",
+        "bounds": {
+          "min": [
+            19800.0,
+            -150.0,
+            0.0
+          ],
+          "max": [
+            26600.0,
+            0.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "D1",
+        "type": "LWPOLYLINE",
+        "layer": "SLAB_OUTLINE",
+        "color": 256,
+        "points": [
+          [
+            19800.0,
+            3200.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            26600.0,
+            3200.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            26600.0,
+            3350.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            19800.0,
+            3350.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "point_format": "x,y,start_width,end_width,bulge",
+        "closed": true,
+        "elevation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "coordinate_system": "OCS",
+        "bounds": {
+          "min": [
+            19800.0,
+            3200.0,
+            0.0
+          ],
+          "max": [
+            26600.0,
+            3350.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "D2",
+        "type": "LINE",
+        "layer": "FLOOR_DATUM",
+        "color": 256,
+        "start": [
+          19700.0,
+          0.0,
+          0.0
+        ],
+        "end": [
+          26700.0,
+          0.0,
+          0.0
+        ],
+        "coordinate_system": "WCS",
+        "bounds": {
+          "min": [
+            19700.0,
+            0.0,
+            0.0
+          ],
+          "max": [
+            26700.0,
+            0.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "D3",
+        "type": "TEXT",
+        "layer": "VIEW_LABEL",
+        "color": 256,
+        "text": "NORTH ELEVATION / SECTION DATUM",
+        "insert": [
+          20000.0,
+          -650.0,
+          0.0
+        ],
+        "coordinate_system": "OCS",
+        "height": 140.0,
+        "rotation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "plain_text": "NORTH ELEVATION / SECTION DATUM",
+        "bounds": {
+          "min": [
+            20000.0,
+            -688.8676671214188,
+            0.0
+          ],
+          "max": [
+            23629.399727148702,
+            -510.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "D4",
+        "type": "TEXT",
+        "layer": "LEVEL_LABEL",
+        "color": 256,
+        "text": "FFL +/-0 / CEILING UNDERSIDE",
+        "insert": [
+          20000.0,
+          3630.0,
+          0.0
+        ],
+        "coordinate_system": "OCS",
+        "height": 120.0,
+        "rotation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "plain_text": "FFL +/-0 / CEILING UNDERSIDE",
+        "bounds": {
+          "min": [
+            20000.0,
+            3596.6848567530697,
+            0.0
+          ],
+          "max": [
+            22482.510231923603,
+            3750.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "D5",
+        "type": "LINE",
+        "layer": "DOOR_DETAIL",
+        "color": 256,
+        "start": [
+          11100.0,
+          1000.0,
+          0.0
+        ],
+        "end": [
+          11220.0,
+          1000.0,
+          0.0
+        ],
+        "coordinate_system": "WCS",
+        "bounds": {
+          "min": [
+            11100.0,
+            1000.0,
+            0.0
+          ],
+          "max": [
+            11220.0,
+            1000.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "D6",
+        "type": "LINE",
+        "layer": "WINDOW_DETAIL",
+        "color": 256,
+        "start": [
+          23000.0,
+          900.0,
+          0.0
+        ],
+        "end": [
+          23000.0,
+          2100.0,
+          0.0
+        ],
+        "coordinate_system": "WCS",
+        "bounds": {
+          "min": [
+            23000.0,
+            900.0,
+            0.0
+          ],
+          "max": [
+            23000.0,
+            2100.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "D7",
+        "type": "LINE",
+        "layer": "WINDOW_DETAIL",
+        "color": 256,
+        "start": [
+          22200.0,
+          1500.0,
+          0.0
+        ],
+        "end": [
+          23800.0,
+          1500.0,
+          0.0
+        ],
+        "coordinate_system": "WCS",
+        "bounds": {
+          "min": [
+            22200.0,
+            1500.0,
+            0.0
+          ],
+          "max": [
+            23800.0,
+            1500.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "D8",
+        "type": "LINE",
+        "layer": "DIM_LINES",
+        "color": 256,
+        "start": [
+          9300.0,
+          0.0,
+          0.0
+        ],
+        "end": [
+          9900.0,
+          0.0,
+          0.0
+        ],
+        "coordinate_system": "WCS",
+        "bounds": {
+          "min": [
+            9300.0,
+            0.0,
+            0.0
+          ],
+          "max": [
+            9900.0,
+            0.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "D9",
+        "type": "LINE",
+        "layer": "DIM_LINES",
+        "color": 256,
+        "start": [
+          9430.0,
+          -70.0,
+          0.0
+        ],
+        "end": [
+          9570.0,
+          70.0,
+          0.0
+        ],
+        "coordinate_system": "WCS",
+        "bounds": {
+          "min": [
+            9430.0,
+            -70.0,
+            0.0
+          ],
+          "max": [
+            9570.0,
+            70.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "DA",
+        "type": "LINE",
+        "layer": "DIM_LINES",
+        "color": 256,
+        "start": [
+          9300.0,
+          3200.0,
+          0.0
+        ],
+        "end": [
+          9900.0,
+          3200.0,
+          0.0
+        ],
+        "coordinate_system": "WCS",
+        "bounds": {
+          "min": [
+            9300.0,
+            3200.0,
+            0.0
+          ],
+          "max": [
+            9900.0,
+            3200.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "DB",
+        "type": "LINE",
+        "layer": "DIM_LINES",
+        "color": 256,
+        "start": [
+          9430.0,
+          3130.0,
+          0.0
+        ],
+        "end": [
+          9570.0,
+          3270.0,
+          0.0
+        ],
+        "coordinate_system": "WCS",
+        "bounds": {
+          "min": [
+            9430.0,
+            3130.0,
+            0.0
+          ],
+          "max": [
+            9570.0,
+            3270.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "DC",
+        "type": "TEXT",
+        "layer": "DIM_HEIGHT",
+        "color": 256,
+        "text": "3200 mm",
+        "insert": [
+          9250.0,
+          1200.0,
+          0.0
+        ],
+        "coordinate_system": "OCS",
+        "height": 170.0,
+        "rotation": 90.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "plain_text": "3200 mm",
+        "bounds": {
+          "min": [
+            9080.0,
+            1200.0,
+            0.0
+          ],
+          "max": [
+            9297.19645293315,
+            2189.9658935879947,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "DD",
+        "type": "TEXT",
+        "layer": "CONSTRUCTION_LABEL",
+        "color": 256,
+        "text": "WALL 200 / FLOOR 150 / CEILING 150 mm",
+        "insert": [
+          0.0,
+          -1850.0,
+          0.0
+        ],
+        "coordinate_system": "OCS",
+        "height": 140.0,
+        "rotation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "plain_text": "WALL 200 / FLOOR 150 / CEILING 150 mm",
+        "bounds": {
+          "min": [
+            0.0,
+            -1888.867667121419,
+            0.0
+          ],
+          "max": [
+            3837.012278308322,
+            -1710.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "DE",
+        "type": "TEXT",
+        "layer": "DRAWING_UNITS",
+        "color": 256,
+        "text": "UNITS: mm",
+        "insert": [
+          0.0,
+          5900.0,
+          0.0
+        ],
+        "coordinate_system": "OCS",
+        "height": 180.0,
+        "rotation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "plain_text": "UNITS: mm",
+        "bounds": {
+          "min": [
+            0.0,
+            5850.027285129604,
+            0.0
+          ],
+          "max": [
+            1313.0422919508867,
+            6080.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "DF",
+        "type": "TEXT",
+        "layer": "SHEET_TITLE",
+        "color": 256,
+        "text": "CONTROLLED COMPLETE-ROOM ACCEPTANCE DRAWING / A101",
+        "insert": [
+          0.0,
+          6350.0,
+          0.0
+        ],
+        "coordinate_system": "OCS",
+        "height": 260.0,
+        "rotation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "plain_text": "CONTROLLED COMPLETE-ROOM ACCEPTANCE DRAWING / A101",
+        "bounds": {
+          "min": [
+            0.0,
+            6277.817189631651,
+            0.0
+          ],
+          "max": [
+            11422.974079126876,
+            6610.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      },
+      {
+        "handle": "E0",
+        "type": "TEXT",
+        "layer": "SHEET_NOTE",
+        "color": 256,
+        "text": "TEST FIXTURE - NOT AN EXTERNAL BUILDING PROJECT",
+        "insert": [
+          0.0,
+          5650.0,
+          0.0
+        ],
+        "coordinate_system": "OCS",
+        "height": 150.0,
+        "rotation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "plain_text": "TEST FIXTURE - NOT AN EXTERNAL BUILDING PROJECT",
+        "bounds": {
+          "min": [
+            0.0,
+            5608.356070941337,
+            0.0
+          ],
+          "max": [
+            5716.678035470669,
+            5800.0,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      }
+    ],
+    "total": 71,
+    "offset": 50,
+    "limit": 25,
+    "layout": "Model",
+    "units": {
+      "name": "mm",
+      "code": 4
+    },
+    "warnings": [
+      "Bounds are approximate geometric extents; text extents depend on available fonts."
+    ],
+    "source": "revised-complete-room.dxf"
+  }
+}

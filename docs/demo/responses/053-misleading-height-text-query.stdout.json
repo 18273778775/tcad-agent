@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "entities": [
+      {
+        "handle": "E3",
+        "type": "TEXT",
+        "layer": "DIM_HEIGHT",
+        "color": 256,
+        "text": "3000 mm",
+        "insert": [
+          9250.0,
+          1100.0,
+          0.0
+        ],
+        "coordinate_system": "OCS",
+        "height": 170.0,
+        "rotation": 90.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "plain_text": "3000 mm",
+        "bounds": {
+          "min": [
+            9080.0,
+            1100.0,
+            0.0
+          ],
+          "max": [
+            9297.19645293315,
+            2089.9658935879947,
+            0.0
+          ]
+        },
+        "bounds_kind": "approximate"
+      }
+    ],
+    "total": 1,
+    "offset": 0,
+    "limit": 100,
+    "layout": "Model",
+    "units": {
+      "name": "mm",
+      "code": 4
+    },
+    "warnings": [
+      "Bounds are approximate geometric extents; text extents depend on available fonts."
+    ],
+    "source": "fixtures/controlled-complete-room.dxf"
+  }
+}

@@ -1,0 +1,545 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "output": "revised-complete-room.dxf",
+    "dry_run": false,
+    "written": true,
+    "dxf_version": "AC1015",
+    "units": {
+      "name": "mm",
+      "code": 4
+    },
+    "layout": "Model",
+    "entity_count": 71,
+    "operations": [
+      {
+        "op": "delete",
+        "handles": [
+          "47",
+          "48",
+          "49",
+          "4A",
+          "4B",
+          "4C",
+          "4D",
+          "4E",
+          "4F",
+          "50",
+          "51",
+          "52",
+          "53",
+          "54",
+          "55",
+          "56",
+          "57",
+          "58",
+          "59",
+          "5A",
+          "5B",
+          "5C",
+          "5D",
+          "5E",
+          "5F",
+          "60",
+          "61",
+          "62",
+          "63",
+          "64",
+          "65",
+          "66",
+          "67",
+          "68",
+          "69",
+          "6A",
+          "6B",
+          "6C",
+          "6D",
+          "6E",
+          "6F",
+          "70",
+          "71",
+          "72",
+          "73",
+          "74",
+          "75",
+          "76",
+          "77",
+          "78",
+          "79",
+          "7A",
+          "7B",
+          "7C",
+          "7D",
+          "7E",
+          "7F",
+          "80",
+          "81",
+          "82",
+          "83",
+          "84",
+          "85",
+          "86",
+          "87",
+          "88",
+          "89",
+          "8A",
+          "8B",
+          "8C",
+          "8D"
+        ],
+        "operation_index": 0
+      },
+      {
+        "op": "add",
+        "handle": "9A",
+        "type": "LWPOLYLINE",
+        "operation_index": 1
+      },
+      {
+        "op": "add",
+        "handle": "9B",
+        "type": "LINE",
+        "operation_index": 2
+      },
+      {
+        "op": "add",
+        "handle": "9C",
+        "type": "LINE",
+        "operation_index": 3
+      },
+      {
+        "op": "add",
+        "handle": "9D",
+        "type": "LINE",
+        "operation_index": 4
+      },
+      {
+        "op": "add",
+        "handle": "9E",
+        "type": "LINE",
+        "operation_index": 5
+      },
+      {
+        "op": "add",
+        "handle": "9F",
+        "type": "LINE",
+        "operation_index": 6
+      },
+      {
+        "op": "add",
+        "handle": "A0",
+        "type": "LINE",
+        "operation_index": 7
+      },
+      {
+        "op": "add",
+        "handle": "A1",
+        "type": "LWPOLYLINE",
+        "operation_index": 8
+      },
+      {
+        "op": "add",
+        "handle": "A2",
+        "type": "LWPOLYLINE",
+        "operation_index": 9
+      },
+      {
+        "op": "add",
+        "handle": "A3",
+        "type": "LINE",
+        "operation_index": 10
+      },
+      {
+        "op": "add",
+        "handle": "A4",
+        "type": "LINE",
+        "operation_index": 11
+      },
+      {
+        "op": "add",
+        "handle": "A5",
+        "type": "LINE",
+        "operation_index": 12
+      },
+      {
+        "op": "add",
+        "handle": "A6",
+        "type": "LINE",
+        "operation_index": 13
+      },
+      {
+        "op": "add",
+        "handle": "A7",
+        "type": "LINE",
+        "operation_index": 14
+      },
+      {
+        "op": "add",
+        "handle": "A8",
+        "type": "LINE",
+        "operation_index": 15
+      },
+      {
+        "op": "add",
+        "handle": "A9",
+        "type": "LINE",
+        "operation_index": 16
+      },
+      {
+        "op": "add",
+        "handle": "AA",
+        "type": "LINE",
+        "operation_index": 17
+      },
+      {
+        "op": "add",
+        "handle": "AB",
+        "type": "LINE",
+        "operation_index": 18
+      },
+      {
+        "op": "add",
+        "handle": "AC",
+        "type": "LINE",
+        "operation_index": 19
+      },
+      {
+        "op": "add",
+        "handle": "AD",
+        "type": "LINE",
+        "operation_index": 20
+      },
+      {
+        "op": "add",
+        "handle": "AE",
+        "type": "LINE",
+        "operation_index": 21
+      },
+      {
+        "op": "add",
+        "handle": "AF",
+        "type": "LINE",
+        "operation_index": 22
+      },
+      {
+        "op": "add",
+        "handle": "B0",
+        "type": "LINE",
+        "operation_index": 23
+      },
+      {
+        "op": "add",
+        "handle": "B1",
+        "type": "LINE",
+        "operation_index": 24
+      },
+      {
+        "op": "add",
+        "handle": "B2",
+        "type": "LINE",
+        "operation_index": 25
+      },
+      {
+        "op": "add",
+        "handle": "B3",
+        "type": "LINE",
+        "operation_index": 26
+      },
+      {
+        "op": "add",
+        "handle": "B4",
+        "type": "ARC",
+        "operation_index": 27
+      },
+      {
+        "op": "add",
+        "handle": "B5",
+        "type": "LINE",
+        "operation_index": 28
+      },
+      {
+        "op": "add",
+        "handle": "B6",
+        "type": "LINE",
+        "operation_index": 29
+      },
+      {
+        "op": "add",
+        "handle": "B7",
+        "type": "LINE",
+        "operation_index": 30
+      },
+      {
+        "op": "add",
+        "handle": "B8",
+        "type": "LINE",
+        "operation_index": 31
+      },
+      {
+        "op": "add",
+        "handle": "B9",
+        "type": "TEXT",
+        "operation_index": 32
+      },
+      {
+        "op": "add",
+        "handle": "BA",
+        "type": "TEXT",
+        "operation_index": 33
+      },
+      {
+        "op": "add",
+        "handle": "BB",
+        "type": "TEXT",
+        "operation_index": 34
+      },
+      {
+        "op": "add",
+        "handle": "BC",
+        "type": "TEXT",
+        "operation_index": 35
+      },
+      {
+        "op": "add",
+        "handle": "BD",
+        "type": "LINE",
+        "operation_index": 36
+      },
+      {
+        "op": "add",
+        "handle": "BE",
+        "type": "LINE",
+        "operation_index": 37
+      },
+      {
+        "op": "add",
+        "handle": "BF",
+        "type": "LINE",
+        "operation_index": 38
+      },
+      {
+        "op": "add",
+        "handle": "C0",
+        "type": "LINE",
+        "operation_index": 39
+      },
+      {
+        "op": "add",
+        "handle": "C1",
+        "type": "LINE",
+        "operation_index": 40
+      },
+      {
+        "op": "add",
+        "handle": "C2",
+        "type": "TEXT",
+        "operation_index": 41
+      },
+      {
+        "op": "add",
+        "handle": "C3",
+        "type": "LINE",
+        "operation_index": 42
+      },
+      {
+        "op": "add",
+        "handle": "C4",
+        "type": "LINE",
+        "operation_index": 43
+      },
+      {
+        "op": "add",
+        "handle": "C5",
+        "type": "LINE",
+        "operation_index": 44
+      },
+      {
+        "op": "add",
+        "handle": "C6",
+        "type": "LINE",
+        "operation_index": 45
+      },
+      {
+        "op": "add",
+        "handle": "C7",
+        "type": "LINE",
+        "operation_index": 46
+      },
+      {
+        "op": "add",
+        "handle": "C8",
+        "type": "TEXT",
+        "operation_index": 47
+      },
+      {
+        "op": "add",
+        "handle": "C9",
+        "type": "LWPOLYLINE",
+        "operation_index": 48
+      },
+      {
+        "op": "add",
+        "handle": "CA",
+        "type": "LWPOLYLINE",
+        "operation_index": 49
+      },
+      {
+        "op": "add",
+        "handle": "CB",
+        "type": "LWPOLYLINE",
+        "operation_index": 50
+      },
+      {
+        "op": "add",
+        "handle": "CC",
+        "type": "LINE",
+        "operation_index": 51
+      },
+      {
+        "op": "add",
+        "handle": "CD",
+        "type": "TEXT",
+        "operation_index": 52
+      },
+      {
+        "op": "add",
+        "handle": "CE",
+        "type": "TEXT",
+        "operation_index": 53
+      },
+      {
+        "op": "add",
+        "handle": "CF",
+        "type": "LWPOLYLINE",
+        "operation_index": 54
+      },
+      {
+        "op": "add",
+        "handle": "D0",
+        "type": "LWPOLYLINE",
+        "operation_index": 55
+      },
+      {
+        "op": "add",
+        "handle": "D1",
+        "type": "LWPOLYLINE",
+        "operation_index": 56
+      },
+      {
+        "op": "add",
+        "handle": "D2",
+        "type": "LINE",
+        "operation_index": 57
+      },
+      {
+        "op": "add",
+        "handle": "D3",
+        "type": "TEXT",
+        "operation_index": 58
+      },
+      {
+        "op": "add",
+        "handle": "D4",
+        "type": "TEXT",
+        "operation_index": 59
+      },
+      {
+        "op": "add",
+        "handle": "D5",
+        "type": "LINE",
+        "operation_index": 60
+      },
+      {
+        "op": "add",
+        "handle": "D6",
+        "type": "LINE",
+        "operation_index": 61
+      },
+      {
+        "op": "add",
+        "handle": "D7",
+        "type": "LINE",
+        "operation_index": 62
+      },
+      {
+        "op": "add",
+        "handle": "D8",
+        "type": "LINE",
+        "operation_index": 63
+      },
+      {
+        "op": "add",
+        "handle": "D9",
+        "type": "LINE",
+        "operation_index": 64
+      },
+      {
+        "op": "add",
+        "handle": "DA",
+        "type": "LINE",
+        "operation_index": 65
+      },
+      {
+        "op": "add",
+        "handle": "DB",
+        "type": "LINE",
+        "operation_index": 66
+      },
+      {
+        "op": "add",
+        "handle": "DC",
+        "type": "TEXT",
+        "operation_index": 67
+      },
+      {
+        "op": "add",
+        "handle": "DD",
+        "type": "TEXT",
+        "operation_index": 68
+      },
+      {
+        "op": "add",
+        "handle": "DE",
+        "type": "TEXT",
+        "operation_index": 69
+      },
+      {
+        "op": "add",
+        "handle": "DF",
+        "type": "TEXT",
+        "operation_index": 70
+      },
+      {
+        "op": "add",
+        "handle": "E0",
+        "type": "TEXT",
+        "operation_index": 71
+      }
+    ],
+    "summary": {
+      "added": 71,
+      "updated": 0,
+      "deleted": 71,
+      "transformed": 0
+    },
+    "warnings": [
+      "Setting units changes INSUNITS metadata only; existing geometry is not rescaled.",
+      "DWG conversion may lose unsupported entities or properties; verify critical geometry."
+    ],
+    "source": "fixtures/controlled-complete-room.dwg",
+    "conversion": {
+      "input": "fixtures/controlled-complete-room.dwg",
+      "backend": "libredwg",
+      "format": "dxf",
+      "dxf_version": "AC1015",
+      "warnings": [
+        "DWG conversion may lose unsupported entities or properties; verify critical geometry."
+      ],
+      "diagnostics": {
+        "stdout": "Reading DWG file fixtures/controlled-complete-room.dwg\r\nWriting DXF file <temporary-file>\r\n"
+      }
+    }
+  }
+}

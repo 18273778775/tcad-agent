@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "name": "A101",
+  "units": "mm",
+  "axes": "drawing_x_length_y_width",
+  "height_meaning": "finished_floor_to_ceiling_underside",
+  "roles": {
+    "footprint": {
+      "layer": "ROOM_CLEAR"
+    },
+    "height": {
+      "layer": "ROOM_HEIGHT"
+    },
+    "wall_thickness": {
+      "layer": "WALL_THICKNESS"
+    },
+    "floor_thickness": {
+      "layer": "FLOOR_THICKNESS"
+    },
+    "ceiling_thickness": {
+      "layer": "CEILING_THICKNESS"
+    }
+  },
+  "openings": [
+    {
+      "id": "D1",
+      "kind": "door",
+      "wall": "south",
+      "plan": {
+        "layer": "DOOR_PLAN"
+      },
+      "elevation": {
+        "layer": "DOOR_ELEV"
+      }
+    },
+    {
+      "id": "W1",
+      "kind": "window",
+      "wall": "north",
+      "plan": {
+        "layer": "WINDOW_PLAN"
+      },
+      "elevation": {
+        "layer": "WINDOW_ELEV"
+      }
+    }
+  ],
+  "dimension_labels": {
+    "length": {
+      "layer": "DIM_LENGTH"
+    },
+    "width": {
+      "layer": "DIM_WIDTH"
+    },
+    "height": {
+      "layer": "DIM_HEIGHT"
+    }
+  },
+  "units_label": {
+    "layer": "DRAWING_UNITS"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "python": "3.12.13",
+    "executable": "<python>",
+    "packages": {
+      "tcad-agent": "0.1.0",
+      "ezdxf": "1.4.3",
+      "jsonschema": "4.26.0",
+      "Pillow": "12.3.0",
+      "trimesh": "5.1.1"
+    },
+    "converters": {
+      "libredwg": {
+        "available": true,
+        "executable": "<libredwg>/dwg2dxf.exe",
+        "environment_variable": "TCAD_DWG2DXF",
+        "configured_path": "<libredwg>/dwg2dxf.exe",
+        "adapter_enabled": true,
+        "conversions": [
+          "dwg->dxf"
+        ]
+      },
+      "oda": {
+        "available": false,
+        "executable": null,
+        "environment_variable": "TCAD_ODA_CONVERTER",
+        "configured_path": null,
+        "adapter_enabled": false,
+        "conversions": [],
+        "note": "Detection only; the ODA conversion adapter is not enabled."
+      }
+    },
+    "dxf_backend": "ready",
+    "svg_backend": "ready"
+  }
+}

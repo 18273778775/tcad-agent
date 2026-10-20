@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "units": "mm",
+  "operations": [
+    {"op":"layer","name":"OUTLINE","color":7},
+    {"op":"layer","name":"HOLES","color":1},
+    {"op":"layer","name":"NOTES","color":3},
+    {"op":"add","entity":{"type":"RECTANGLE","insert":[0,0],"width":120,"height":80,"layer":"OUTLINE"}},
+    {"op":"add","entity":{"type":"CIRCLE","center":[20,20],"radius":5,"layer":"HOLES"}},
+    {"op":"add","entity":{"type":"CIRCLE","center":[100,20],"radius":5,"layer":"HOLES"}},
+    {"op":"add","entity":{"type":"CIRCLE","center":[100,60],"radius":5,"layer":"HOLES"}},
+    {"op":"add","entity":{"type":"CIRCLE","center":[20,60],"radius":5,"layer":"HOLES"}},
+    {"op":"add","entity":{"type":"LINE","start":[0,-10],"end":[120,-10],"layer":"OUTLINE"}},
+    {"op":"add","entity":{"type":"TEXT","text":"120 x 80 mm / 4 holes R5","insert":[0,90],"height":4,"layer":"NOTES"}}
+  ]
+}

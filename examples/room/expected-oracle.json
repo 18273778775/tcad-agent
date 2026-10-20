@@ -1,0 +1,38 @@
+{
+  "provenance": "controlled complete-room acceptance drawing; not an external building project",
+  "units": "mm",
+  "name": "A101",
+  "dimensions": {
+    "length": 6000,
+    "width": 4500,
+    "height": 3000
+  },
+  "construction": {
+    "wall_thickness": 200,
+    "floor_thickness": 150,
+    "ceiling_thickness": 150
+  },
+  "clear_area_mm2": 27000000,
+  "clear_perimeter_mm": 21000,
+  "openings": [
+    {
+      "id": "D1",
+      "kind": "door",
+      "wall": "south",
+      "offset": 1000,
+      "width": 900,
+      "height": 2100,
+      "sill": 0
+    },
+    {
+      "id": "W1",
+      "kind": "window",
+      "wall": "north",
+      "offset": 2200,
+      "width": 1600,
+      "height": 1200,
+      "sill": 900
+    }
+  ],
+  "height_evidence": "explicit elevation/section geometry measured from finished floor to ceiling underside"
+}

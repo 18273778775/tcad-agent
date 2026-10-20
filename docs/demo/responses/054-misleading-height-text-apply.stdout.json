@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "output": "fixtures/misleading-height-text.dxf",
+    "dry_run": false,
+    "written": true,
+    "dxf_version": "AC1015",
+    "units": {
+      "name": "mm",
+      "code": 4
+    },
+    "layout": "Model",
+    "entity_count": 71,
+    "operations": [
+      {
+        "op": "update",
+        "handles": [
+          "E3"
+        ],
+        "operation_index": 0
+      }
+    ],
+    "summary": {
+      "added": 0,
+      "updated": 1,
+      "deleted": 0,
+      "transformed": 0
+    },
+    "warnings": [],
+    "source": "fixtures/controlled-complete-room.dxf"
+  }
+}

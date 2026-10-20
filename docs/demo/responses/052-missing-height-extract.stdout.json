@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": false,
+  "error": {
+    "code": "ROOM_EVIDENCE_MISSING",
+    "message": "Each room role must identify exactly one entity.",
+    "details": {
+      "role": "height",
+      "count": 0,
+      "selector": {
+        "layer": "ROOM_HEIGHT"
+      }
+    }
+  }
+}

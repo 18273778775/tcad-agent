@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "measurements": [
+      {
+        "handle": "8D",
+        "type": "LINE",
+        "layer": "ROOM_HEIGHT",
+        "color": 256,
+        "supported": true,
+        "length": 3000.0,
+        "length_kind": "exact_3d",
+        "area": null,
+        "area_kind": "not_defined_for_line"
+      },
+      {
+        "handle": "8F",
+        "type": "LINE",
+        "layer": "WALL_THICKNESS",
+        "color": 256,
+        "supported": true,
+        "length": 200.0,
+        "length_kind": "exact_3d",
+        "area": null,
+        "area_kind": "not_defined_for_line"
+      },
+      {
+        "handle": "91",
+        "type": "LINE",
+        "layer": "FLOOR_THICKNESS",
+        "color": 256,
+        "supported": true,
+        "length": 150.0,
+        "length_kind": "exact_3d",
+        "area": null,
+        "area_kind": "not_defined_for_line"
+      },
+      {
+        "handle": "93",
+        "type": "LINE",
+        "layer": "CEILING_THICKNESS",
+        "color": 256,
+        "supported": true,
+        "length": 150.0,
+        "length_kind": "exact_3d",
+        "area": null,
+        "area_kind": "not_defined_for_line"
+      },
+      {
+        "handle": "95",
+        "type": "LINE",
+        "layer": "DOOR_PLAN",
+        "color": 256,
+        "supported": true,
+        "length": 900.0,
+        "length_kind": "exact_3d",
+        "area": null,
+        "area_kind": "not_defined_for_line"
+      },
+      {
+        "handle": "97",
+        "type": "LINE",
+        "layer": "WINDOW_PLAN",
+        "color": 256,
+        "supported": true,
+        "length": 1600.0,
+        "length_kind": "exact_3d",
+        "area": null,
+        "area_kind": "not_defined_for_line"
+      }
+    ],
+    "layout": "Model",
+    "units": {
+      "name": "mm",
+      "code": 4
+    },
+    "totals": {
+      "length": 6000.0,
+      "length_complete": true,
+      "area": 0,
+      "area_kind": "sum_of_available_entity_areas_overlaps_counted_separately",
+      "area_entity_count": 0
+    },
+    "unsupported_handles": [],
+    "warnings": [
+      "Lengths use drawing units; areas use squared drawing units. Entity areas are summed without Boolean union."
+    ],
+    "source": "fixtures/controlled-complete-room.dxf"
+  }
+}

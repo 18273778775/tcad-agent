@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "operations": [
+    {
+      "op": "delete",
+      "handles": [
+        "8D"
+      ]
+    }
+  ]
+}

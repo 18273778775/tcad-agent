@@ -1,0 +1,193 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "passed": true,
+    "verified": true,
+    "model_path": "models/before.dxf",
+    "source_units": "mm",
+    "drawing_unit_to_m": 0.001,
+    "tolerance_mm": 0.01,
+    "dimensions": {
+      "length": {
+        "expected_source_units": 6000.0,
+        "expected_mm": 6000.0,
+        "actual_model_units": 6000.0,
+        "actual_mm": 6000.0,
+        "absolute_error_mm": 0.0,
+        "passed": true
+      },
+      "width": {
+        "expected_source_units": 4500.0,
+        "expected_mm": 4500.0,
+        "actual_model_units": 4500.0,
+        "actual_mm": 4500.0,
+        "absolute_error_mm": 0.0,
+        "passed": true
+      },
+      "height": {
+        "expected_source_units": 3000.0,
+        "expected_mm": 3000.0,
+        "actual_model_units": 3000.0,
+        "actual_mm": 3000.0,
+        "absolute_error_mm": 0.0,
+        "passed": true
+      }
+    },
+    "openings": [
+      {
+        "id": "D1",
+        "kind": "door",
+        "wall": "south",
+        "passed": true,
+        "void_clear": true,
+        "measurements": {
+          "offset": {
+            "expected_source_units": 1000.0,
+            "expected_mm": 1000.0,
+            "actual_model_units": 1000.0,
+            "actual_mm": 1000.0,
+            "absolute_error_mm": 0.0,
+            "passed": true
+          },
+          "width": {
+            "expected_source_units": 900.0,
+            "expected_mm": 900.0,
+            "actual_model_units": 900.0000000000003,
+            "actual_mm": 900.0000000000003,
+            "absolute_error_mm": 3.410605131648481e-13,
+            "passed": true
+          },
+          "height": {
+            "expected_source_units": 2100.0,
+            "expected_mm": 2100.0,
+            "actual_model_units": 2099.9999999999995,
+            "actual_mm": 2099.9999999999995,
+            "absolute_error_mm": 4.547473508864641e-13,
+            "passed": true
+          },
+          "sill": {
+            "expected_source_units": 0.0,
+            "expected_mm": 0.0,
+            "actual_model_units": 0.0,
+            "actual_mm": 0.0,
+            "absolute_error_mm": 0.0,
+            "passed": true
+          }
+        }
+      },
+      {
+        "id": "W1",
+        "kind": "window",
+        "wall": "north",
+        "passed": true,
+        "void_clear": true,
+        "measurements": {
+          "offset": {
+            "expected_source_units": 2200.0,
+            "expected_mm": 2200.0,
+            "actual_model_units": 2200.0,
+            "actual_mm": 2200.0,
+            "absolute_error_mm": 0.0,
+            "passed": true
+          },
+          "width": {
+            "expected_source_units": 1600.0,
+            "expected_mm": 1600.0,
+            "actual_model_units": 1599.9999999999995,
+            "actual_mm": 1599.9999999999995,
+            "absolute_error_mm": 4.547473508864641e-13,
+            "passed": true
+          },
+          "height": {
+            "expected_source_units": 1200.0,
+            "expected_mm": 1200.0,
+            "actual_model_units": 1199.9999999999998,
+            "actual_mm": 1199.9999999999998,
+            "absolute_error_mm": 2.2737367544323206e-13,
+            "passed": true
+          },
+          "sill": {
+            "expected_source_units": 900.0,
+            "expected_mm": 900.0,
+            "actual_model_units": 900.0,
+            "actual_mm": 900.0,
+            "absolute_error_mm": 0.0,
+            "passed": true
+          }
+        }
+      }
+    ],
+    "checks": [
+      {
+        "name": "source_and_serialized_units",
+        "passed": true
+      },
+      {
+        "name": "local_interior_origin",
+        "passed": true
+      },
+      {
+        "name": "floor_extent_and_thickness",
+        "passed": true
+      },
+      {
+        "name": "ceiling_extent_and_thickness",
+        "passed": true
+      },
+      {
+        "name": "south_wall_placement_and_thickness",
+        "passed": true
+      },
+      {
+        "name": "south_opening_count",
+        "passed": true,
+        "expected": 1,
+        "actual": 1
+      },
+      {
+        "name": "north_wall_placement_and_thickness",
+        "passed": true
+      },
+      {
+        "name": "north_opening_count",
+        "passed": true,
+        "expected": 1,
+        "actual": 1
+      },
+      {
+        "name": "west_wall_placement_and_thickness",
+        "passed": true
+      },
+      {
+        "name": "west_opening_count",
+        "passed": true,
+        "expected": 0,
+        "actual": 0
+      },
+      {
+        "name": "east_wall_placement_and_thickness",
+        "passed": true
+      },
+      {
+        "name": "east_opening_count",
+        "passed": true,
+        "expected": 0,
+        "actual": 0
+      }
+    ],
+    "model_units": "mm",
+    "model_unit_to_m": 0.001,
+    "components": {
+      "count": 11,
+      "each_component_watertight": true,
+      "assembly_boolean_union": false
+    },
+    "limitations": [
+      "Verification supports named, closed, axis-aligned rectangular components.",
+      "Components are separate solids; no fused watertight assembly is claimed.",
+      "OBJ has no standardized unit field; its API coordinate contract is metres."
+    ]
+  }
+}

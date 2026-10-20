@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tcad-agent"
+version = "0.1.0"
+description = "Headless, JSON-first 2D CAD CLI for agents"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{name = "LiTao"}]
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md"]
+dependencies = ["ezdxf==1.4.3", "jsonschema>=4.23,<5", "Pillow>=10,<13", "trimesh>=5.1.1,<6"]
+
+[project.urls]
+Homepage = "https://github.com/18273778775/tcad-agent"
+Repository = "https://github.com/18273778775/tcad-agent"
+Documentation = "https://github.com/18273778775/tcad-agent/blob/main/README.md"
+Issues = "https://github.com/18273778775/tcad-agent/issues"
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "ruff>=0.11"]
+
+[project.scripts]
+tcad = "agentcad.cli:main"
+agentcad = "agentcad.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100

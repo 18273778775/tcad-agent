@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "operations": [
+    {
+      "op": "add",
+      "entity": {
+        "type": "LINE",
+        "start": [
+          1,
+          1
+        ],
+        "end": [
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "op": "delete",
+      "handles": [
+        "FFFFFFFFFFFFFFFF"
+      ]
+    }
+  ]
+}

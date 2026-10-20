@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "input": "fixtures/controlled-complete-room.dxf",
+    "output": "previews/before-dxf.svg",
+    "format": "svg",
+    "layout": "Model",
+    "entity_count": 71,
+    "warnings": [
+      "SVG is fitted to a preview page of at most 420 mm per side; its physical size is not drawing scale.",
+      "Preview uses a 2D top projection; ACIS solids and some 3D features are unsupported.",
+      "Text appearance depends on installed fonts; substitutions may change its appearance.",
+      "External references are not resolved; linked raster images are shown as rectangles."
+    ],
+    "source": "fixtures/controlled-complete-room.dxf"
+  }
+}

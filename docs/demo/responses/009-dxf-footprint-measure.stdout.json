@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "id": null,
+  "ok": true,
+  "result": {
+    "measurements": [
+      {
+        "handle": "8B",
+        "type": "LWPOLYLINE",
+        "layer": "ROOM_CLEAR",
+        "color": 256,
+        "supported": true,
+        "length": 21000.0,
+        "length_kind": "exact_centerline",
+        "closed": true,
+        "area": 27000000.0,
+        "signed_area": 27000000.0,
+        "area_kind": "absolute_algebraic_area_in_entity_plane",
+        "warnings": [
+          "Closed-polyline area is the absolute signed integral; self-intersections are not resolved into a union area."
+        ]
+      }
+    ],
+    "layout": "Model",
+    "units": {
+      "name": "mm",
+      "code": 4
+    },
+    "totals": {
+      "length": 21000.0,
+      "length_complete": true,
+      "area": 27000000.0,
+      "area_kind": "sum_of_available_entity_areas_overlaps_counted_separately",
+      "area_entity_count": 1
+    },
+    "unsupported_handles": [],
+    "warnings": [
+      "Lengths use drawing units; areas use squared drawing units. Entity areas are summed without Boolean union."
+    ],
+    "source": "fixtures/controlled-complete-room.dxf"
+  }
+}

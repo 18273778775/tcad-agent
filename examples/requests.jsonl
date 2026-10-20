@@ -1,0 +1,4 @@
+{"id":"features","command":"capabilities","args":{}}
+{"id":"plate","command":"apply","args":{"output":"artifacts/plate.dxf","plan":{"version":1,"units":"mm","operations":[{"op":"add","entity":{"type":"RECTANGLE","insert":[0,0],"width":120,"height":80}},{"op":"add","entity":{"type":"CIRCLE","center":[20,20],"radius":5}}]}}}
+{"id":"holes","command":"query","args":{"input":"artifacts/plate.dxf","types":["CIRCLE"],"limit":10}}
+{"id":"preview","command":"render","args":{"input":"artifacts/plate.dxf","output":"artifacts/plate.svg"}}
