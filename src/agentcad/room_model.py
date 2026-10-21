@@ -4,8 +4,9 @@
 """Rectangular room solids and verification of the serialized geometry.
 
 The mesh coordinate frame is local: the clear interior southwest corner at the
-finished floor is (0, 0, 0).  GLB and OBJ coordinates are metres.  DXF coordinates
-retain the explicitly declared drawing units.  Every solid is a separate box;
+finished floor is (0, 0, 0). Internal, OBJ and DXF coordinates use Z up. GLB
+uses the glTF right-handed Y-up frame: (x, y, z) becomes (x, z, -y), in metres.
+DXF coordinates retain the explicitly declared drawing units. Every solid is a separate box;
 the assembly is deliberately not represented as one Boolean-unioned solid.
 """
 
@@ -18,13 +19,19 @@ import numpy as np
 
 from .errors import CadError
 from .io import atomic_output
-from .room import validate_room_spec
+from .room import extract_room, source_identity, validate_room_spec
 
 
 _UNITS = {"mm": (0.001, 4), "cm": (0.01, 5), "m": (1.0, 6),
           "in": (0.0254, 1), "ft": (0.3048, 2)}
 _ROLE = re.compile(r"tcad_wall_(south|north|west|east)_[0-9]+\Z")
 _SIDES = ("south", "north", "west", "east")
+# A proper rotation (determinant +1), preserving winding and volume.
+ARCHITECTURAL_TO_GLTF = np.array([[1., 0., 0., 0.], [0., 0., 1., 0.],
+                                  [0., -1., 0., 0.], [0., 0., 0., 1.]])
+GLTF_TO_ARCHITECTURAL = ARCHITECTURAL_TO_GLTF.T.copy()
+_GLB_CONVENTION = {"schema_version": "tcad-room-2.0",
+                   "coordinate_system": "gltf_y_up_right_handed", "units": "m"}
 
 
 def _trimesh():
@@ -157,8 +164,11 @@ def build_room_model(spec, output, overwrite=False):
     with atomic_output(target, overwrite=overwrite) as temporary:
         if extension == ".glb":
             scene = _trimesh().Scene()
+            scene.metadata["tcad_room"] = dict(_GLB_CONVENTION)
             for name, mesh in parts.items():
-                scene.add_geometry(mesh, node_name=name, geom_name=name)
+                transformed = mesh.copy()
+                transformed.apply_transform(ARCHITECTURAL_TO_GLTF)
+                scene.add_geometry(transformed, node_name=name, geom_name=name)
             temporary.write_bytes(scene.export(file_type="glb"))
         elif extension == ".obj":
             _write_obj(parts, temporary)
@@ -170,7 +180,9 @@ def build_room_model(spec, output, overwrite=False):
         "written": True, "output": str(target), "format": extension[1:],
         "model_units": spec["units"] if extension == ".dxf" else "m",
         "source_units": spec["units"], "drawing_unit_to_m": scale,
-        "coordinate_frame": "local XYZ; interior southwest finished floor is (0, 0, 0)",
+        "coordinate_frame": ("glTF right-handed Y-up; metres; architectural XYZ maps to (X,Z,-Y)"
+                             if extension == ".glb" else "local Z-up XYZ; southwest floor origin"),
+        "model_schema_version": "tcad-room-2.0",
         "source_origin": list(spec["origin"]), "geometry_count": len(parts),
         "verification": verification,
     }
@@ -218,9 +230,22 @@ def _load_obj(path):
     return result, "m", 1.0
 
 
-def _load_glb(path):
+def load_glb_room_components(path):
+    """Load marked glTF Y-up room geometry into architectural Z-up metres.
+
+    Old TCAD GLBs did not mark their nonstandard Z-up frame. Reject these rather
+    than silently interpreting them as standard glTF. Rebuild from their spec.
+    The marker selects the frame only; geometric verification never trusts it
+    for dimensions, positions, openings or component orientation.
+    """
     trimesh = _trimesh()
     scene = trimesh.load_scene(path, process=False)
+    if scene.metadata.get("tcad_room") != _GLB_CONVENTION:
+        raise CadError("UNSUPPORTED_MODEL_CONVENTION",
+                       "GLB needs the TCAD room-2.0 Y-up coordinate marker; rebuild legacy GLBs from their room spec.",
+                       {"required": _GLB_CONVENTION,
+                        "found": scene.metadata.get("tcad_room"),
+                        "recovery": "room-model --spec <room.json> --output <new.glb>"})
     result = {}
     for node in scene.graph.nodes_geometry:
         transform, geometry = scene.graph[node]
@@ -233,8 +258,12 @@ def _load_glb(path):
         if not isinstance(mesh, trimesh.Trimesh):
             raise ValueError("Every named room component must be a triangle mesh.")
         vertices = trimesh.transform_points(np.asarray(mesh.vertices), transform)
+        vertices = trimesh.transform_points(vertices, GLTF_TO_ARCHITECTURAL)
         result[name] = (vertices, np.asarray(mesh.faces))
     return result, "m", 1.0
+
+
+_load_glb = load_glb_room_components
 
 
 def _load_dxf(path):
@@ -294,6 +323,18 @@ def _box_bounds(vertices, faces, epsilon):
                 raise ValueError("The triangles do not cover all six rectangular box faces.")
     if not accounted.all() or np.any(areas <= 0):
         raise ValueError("A component contains internal or degenerate triangles.")
+    center = (low + high) / 2
+    normals = np.cross(triangles[:, 1] - triangles[:, 0],
+                       triangles[:, 2] - triangles[:, 0])
+    outward = np.einsum("ij,ij->i", normals, triangles.mean(axis=1) - center)
+    if not np.all(outward > 0):
+        raise ValueError("A room component must have outward face normals.")
+    relative = triangles - center
+    signed_volume = float(np.einsum("ij,ij->i", relative[:, 0],
+                                    np.cross(relative[:, 1], relative[:, 2])).sum() / 6)
+    if signed_volume <= 0 or not math.isclose(signed_volume, float(np.prod(high - low)),
+                                             rel_tol=1e-7, abs_tol=1e-15):
+        raise ValueError("A room component must have positive solid volume.")
     return np.asarray([low, high])
 
 
@@ -366,7 +407,9 @@ def verify_room_model(spec, model_path, tolerance_mm=0.01):
     loaders = {".glb": _load_glb, ".obj": _load_obj, ".dxf": _load_dxf}
     if path.suffix.lower() not in loaders:
         raise CadError("UNSUPPORTED_FORMAT", "Room model must be .glb, .obj, or .dxf.")
-    result = {"passed": False, "verified": False, "model_path": str(path),
+    result = {"passed": False, "verified": False, "model_verified": False,
+              "source_verified": False, "verification_scope": "model_against_spec",
+              "model_path": str(path),
               "source_units": spec["units"], "drawing_unit_to_m": source_scale,
               "tolerance_mm": tolerance_mm, "dimensions": {}, "openings": [], "checks": []}
 
@@ -457,11 +500,14 @@ def verify_room_model(spec, model_path, tolerance_mm=0.01):
                 entry["void_clear"] = True
                 entry["passed"] = all(item["passed"] for item in entry["measurements"].values())
         result["components"] = {"count": len(parts), "each_component_watertight": True,
+                                "each_component_outward_normals": True,
+                                "each_component_positive_volume": True,
                                 "assembly_boolean_union": False}
         result["limitations"] = [
             "Verification supports named, closed, axis-aligned rectangular components.",
             "Components are separate solids; no fused watertight assembly is claimed.",
             "OBJ has no standardized unit field; its API coordinate contract is metres.",
+            "This result verifies the model against the supplied spec, without rereading source CAD.",
         ]
     except CadError:
         raise
@@ -470,8 +516,79 @@ def verify_room_model(spec, model_path, tolerance_mm=0.01):
     passed = (all(item["passed"] for item in result["dimensions"].values()) and
               all(item["passed"] for item in result["openings"]) and
               all(item["passed"] for item in result["checks"]))
-    result["passed"] = result["verified"] = passed
+    result["passed"] = result["verified"] = result["model_verified"] = passed
     if not passed:
         raise CadError("MODEL_DIMENSION_MISMATCH",
                        "Serialized room dimensions, openings, or construction differ.", result)
+    return result
+
+
+def verify_room_model_against_source(spec, model_path, source, mapping, tolerance_mm=0.01):
+    """Verify both current source CAD -> spec and serialized model -> spec.
+
+    A spec must carry its original source SHA-256. DWG conversion is temporary;
+    compare the actual DWG identity, never a conversion's timestamps or paths.
+    The source is hashed again after extraction to reject concurrent mutations.
+    """
+    from .converters import readable_dxf
+
+    scale = _validate_spec(spec)
+    tolerance_mm = _number(tolerance_mm, "tolerance_mm", positive=True)
+    before = source_identity(source)
+    expected_sha = spec.get("source", {}).get("sha256")
+    if not isinstance(expected_sha, str) or expected_sha != before["sha256"]:
+        raise CadError("ROOM_SOURCE_MISMATCH",
+                       "Current source hash differs from the room specification; extract a new spec.",
+                       {"expected_sha256": expected_sha, "actual_sha256": before["sha256"],
+                        "source_verified": False, "model_verified": False})
+    recorded_mapping = spec.get("evidence", {}).get("interpretation", {}).get("mapping")
+    if recorded_mapping is not None and recorded_mapping != mapping:
+        raise CadError("ROOM_SOURCE_MISMATCH", "Verification mapping differs from the extraction mapping.",
+                       {"source_verified": False, "model_verified": False})
+    with readable_dxf(source) as dxf:
+        current = extract_room(dxf, mapping, source_info=before)["spec"]
+    after = source_identity(source)
+    if after["sha256"] != before["sha256"]:
+        raise CadError("ROOM_SOURCE_MISMATCH", "Source changed during strict verification.",
+                       {"source_verified": False, "model_verified": False})
+    checks = []
+
+    def compare(label, expected, actual):
+        if isinstance(expected, (float, int)) and not isinstance(expected, bool):
+            error_mm = abs(float(expected) - float(actual)) * scale * 1000
+            checks.append({"name": label, "passed": error_mm <= tolerance_mm,
+                           "absolute_error_mm": error_mm})
+        elif isinstance(expected, dict):
+            checks.append({"name": label + ":keys", "passed": set(expected) == set(actual)})
+            for key in expected.keys() & actual.keys():
+                compare(f"{label}.{key}", expected[key], actual[key])
+        elif isinstance(expected, list):
+            checks.append({"name": label + ":count", "passed": len(expected) == len(actual)})
+            for index, (left, right) in enumerate(zip(expected, actual)):
+                compare(f"{label}[{index}]", left, right)
+        else:
+            checks.append({"name": label, "passed": expected == actual})
+
+    # Compare IDs independent of mapping order, while geometry remains measured.
+    for key in ("units", "drawing_unit_to_m", "origin", "dimensions", "construction"):
+        compare(key, spec[key], current[key])
+    compare("openings", sorted(spec["openings"], key=lambda o: o["id"]),
+            sorted(current["openings"], key=lambda o: o["id"]))
+    if not all(item["passed"] for item in checks):
+        raise CadError("ROOM_SOURCE_MISMATCH", "Current source CAD does not match the supplied room spec.",
+                       {"source_verified": False, "model_verified": False, "source_checks": checks})
+    try:
+        result = verify_room_model(spec, model_path, tolerance_mm=tolerance_mm)
+    except CadError as exc:
+        details = dict(exc.details) if isinstance(exc.details, dict) else {}
+        details.update(source_verified=True, model_verified=False,
+                       verification_scope="source_and_model_against_spec", source_checks=checks)
+        raise CadError(exc.code, exc.message, details) from exc
+    if source_identity(source)["sha256"] != before["sha256"]:
+        raise CadError("ROOM_SOURCE_MISMATCH", "Source changed during strict verification.",
+                       {"source_verified": False, "model_verified": result["model_verified"]})
+    result.update(source_verified=True, verification_scope="source_and_model_against_spec",
+                  source=before, source_checks=checks)
+    result["limitations"] = [item for item in result["limitations"]
+                             if "without rereading" not in item]
     return result

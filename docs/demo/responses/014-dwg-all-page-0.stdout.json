@@ -9,6 +9,16 @@
         "type": "LWPOLYLINE",
         "layer": "ROOM_CLEAR",
         "color": 256,
+        "point_count": 4,
+        "closed": true,
+        "coordinate_system": "OCS",
+        "point_format": "x,y,start_width,end_width,bulge",
+        "elevation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
         "points": [
           [
             0.0,
@@ -39,15 +49,13 @@
             0.0
           ]
         ],
-        "point_format": "x,y,start_width,end_width,bulge",
-        "closed": true,
-        "elevation": 0.0,
-        "extrusion": [
-          0.0,
-          0.0,
-          1.0
-        ],
-        "coordinate_system": "OCS",
+        "geometry_page": {
+          "offset": 0,
+          "returned": 4,
+          "total": 4,
+          "has_more": false,
+          "next_offset": null
+        },
         "bounds": {
           "min": [
             0.0,
@@ -247,6 +255,16 @@
         "type": "LWPOLYLINE",
         "layer": "DOOR_ELEV",
         "color": 256,
+        "point_count": 4,
+        "closed": true,
+        "coordinate_system": "OCS",
+        "point_format": "x,y,start_width,end_width,bulge",
+        "elevation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
         "points": [
           [
             11000.0,
@@ -277,15 +295,13 @@
             0.0
           ]
         ],
-        "point_format": "x,y,start_width,end_width,bulge",
-        "closed": true,
-        "elevation": 0.0,
-        "extrusion": [
-          0.0,
-          0.0,
-          1.0
-        ],
-        "coordinate_system": "OCS",
+        "geometry_page": {
+          "offset": 0,
+          "returned": 4,
+          "total": 4,
+          "has_more": false,
+          "next_offset": null
+        },
         "bounds": {
           "min": [
             11000.0,
@@ -305,6 +321,16 @@
         "type": "LWPOLYLINE",
         "layer": "WINDOW_ELEV",
         "color": 256,
+        "point_count": 4,
+        "closed": true,
+        "coordinate_system": "OCS",
+        "point_format": "x,y,start_width,end_width,bulge",
+        "elevation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
         "points": [
           [
             22200.0,
@@ -335,15 +361,13 @@
             0.0
           ]
         ],
-        "point_format": "x,y,start_width,end_width,bulge",
-        "closed": true,
-        "elevation": 0.0,
-        "extrusion": [
-          0.0,
-          0.0,
-          1.0
-        ],
-        "coordinate_system": "OCS",
+        "geometry_page": {
+          "offset": 0,
+          "returned": 4,
+          "total": 4,
+          "has_more": false,
+          "next_offset": null
+        },
         "bounds": {
           "min": [
             22200.0,
@@ -840,6 +864,7 @@
       }
     ],
     "total": 71,
+    "returned": 25,
     "offset": 0,
     "limit": 25,
     "layout": "Model",
@@ -848,12 +873,20 @@
       "code": 4
     },
     "warnings": [
-      "Bounds are approximate geometric extents; text extents depend on available fonts.",
+      "Bounds are approximate; query does not expand INSERT entities.",
       "DWG conversion may lose unsupported entities or properties; verify critical geometry."
     ],
+    "source_revision": "stat-v1:d2e8f81cbde924ccff03b68b64f7a876a01982304b1649ebf6c8be93d5a79ce3",
+    "has_more": true,
+    "source_sha256": "d1ac64e11382f6345757fb21f4263877b70a2bcf4ff0dca2e554e33da63f5b1f",
+    "next_cursor": "eyJ2IjoyLCJyIjoic3RhdC12MTpkMmU4ZjgxY2JkZTkyNGNjZmYwM2I2OGI2NGY3YTg3NmEwMTk4MjMwNGIxNjQ5ZWJmNmM4YmU5M2Q1YTc5Y2UzIiwicSI6IjBjZmJkNWJlNjc1NTk4OTdiNmQ5MjMxM2JjM2NmYzE5OGJlZWJmYWM3YmZjMjM0ZjkxZGQxY2JlNTlkZjBjNmQiLCJhIjoyNX0",
+    "cache": {
+      "hit": false,
+      "storage": "sqlite",
+      "native_entities": true
+    },
     "source": "fixtures/controlled-complete-room.dwg",
     "conversion": {
-      "input": "fixtures/controlled-complete-room.dwg",
       "backend": "libredwg",
       "format": "dxf",
       "dxf_version": "AC1015",
@@ -861,8 +894,29 @@
         "DWG conversion may lose unsupported entities or properties; verify critical geometry."
       ],
       "diagnostics": {
-        "stdout": "Reading DWG file fixtures/controlled-complete-room.dwg\r\nWriting DXF file <temporary-file>\r\n"
+        "stdout": "Reading DWG file fixtures/controlled-complete-room.dwg\r\nWriting DXF file <cad-cache-file>\r\n"
+      },
+      "input": "fixtures/controlled-complete-room.dwg",
+      "source_sha256": "d1ac64e11382f6345757fb21f4263877b70a2bcf4ff0dca2e554e33da63f5b1f",
+      "normalized_dxf_sha256": "7c58c2da56d3c9eabbeb752b141e421b0bfb8077161242d3f49850d1c905a8f4",
+      "cache": {
+        "hit": true,
+        "persistent": true,
+        "validation": "sha256"
       }
     }
+  },
+  "output": {
+    "detail": "full",
+    "max_bytes": 1048576,
+    "truncated": false,
+    "omitted_sections": 0,
+    "omissions": []
+  },
+  "resources": {
+    "elapsed_seconds": 2.406,
+    "peak_rss_bytes": 82554880,
+    "timeout_seconds": 60.0,
+    "max_memory_mb": 1024
   }
 }

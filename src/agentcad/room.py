@@ -193,6 +193,8 @@ def validate_room_spec(spec):
 
 def source_identity(path):
     source = Path(path).expanduser().resolve()
+    if not source.is_file():
+        raise CadError("FILE_NOT_FOUND", "Source drawing does not exist.", {"path": str(source)})
     digest = hashlib.sha256()
     with source.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
@@ -205,6 +207,7 @@ def source_identity(path):
 
 
 def _rectangle(record, tolerance, role):
+    _require_complete_record(record, role)
     if record["type"] not in {"LWPOLYLINE", "POLYLINE"} or not record.get("closed"):
         raise CadError(
             "UNSUPPORTED_ROOM_GEOMETRY",
@@ -271,6 +274,7 @@ def _rectangle(record, tolerance, role):
 
 
 def _line(record, axis, tolerance, role):
+    _require_complete_record(record, role)
     if record["type"] != "LINE":
         raise CadError(
             "UNSUPPORTED_ROOM_GEOMETRY", "Reference role must select one LINE.", {"role": role}
@@ -289,6 +293,22 @@ def _line(record, axis, tolerance, role):
     if value <= tolerance:
         raise CadError("UNSUPPORTED_ROOM_GEOMETRY", "Reference line is degenerate.", {"role": role})
     return value, min(start[axis], end[axis]), max(start[axis], end[axis])
+
+
+def _require_complete_record(record, role):
+    """Semantic extraction cannot interpret paged or clipped query evidence."""
+    page = record.get("geometry_page")
+    incomplete_page = page is not None and (
+        not isinstance(page, dict) or page.get("offset", 0) != 0 or page.get("has_more", False)
+        or page.get("returned") != page.get("total")
+    )
+    incomplete_points = ("point_count" in record and "points" in record
+                         and record["point_count"] != len(record["points"]))
+    if incomplete_page or incomplete_points or record.get("truncation"):
+        raise CadError("INCOMPLETE_ROOM_EVIDENCE",
+                       "Room extraction requires complete native geometry and text; paged or clipped evidence is unsupported.",
+                       {"role": role, "geometry_page": page,
+                        "truncation": record.get("truncation")})
 
 
 def extract_room(path, mapping, output=None, overwrite=False, source_info=None):
@@ -312,23 +332,53 @@ def extract_room(path, mapping, output=None, overwrite=False, source_info=None):
         "Axis-aligned rectangular clear rooms only; this is not automatic plan recognition.",
     ]
 
+    selectors = list(mapping["roles"].values())
+    selectors.extend(item[key] for item in mapping["openings"] for key in ("plan", "elevation"))
+    selectors.extend(mapping.get("dimension_labels", {}).values())
+    if "units_label" in mapping:
+        selectors.append(mapping["units_label"])
+    wanted_layers = {item["layer"] for item in selectors if "layer" in item}
+    wanted_handles = {item["handle"].upper() for item in selectors if "handle" in item}
+    layer_matches, handle_matches = {}, {}
+    # One native-entity pass, bounded by the mapping's selectors, not by the
+    # drawing's total entities or the number of room roles. Counts establish
+    # ambiguity without retaining a million references on a common layer.
+    for entity in space:
+        layer = entity.dxf.get("layer", "0")
+        if layer in wanted_layers:
+            first, count = layer_matches.get(layer, (entity, 0))
+            layer_matches[layer] = (first, count + 1)
+        handle = entity.dxf.handle.upper()
+        if handle in wanted_handles:
+            handle_matches[handle] = entity
+
     def select(selector, role):
-        matches = [
-            entity
-            for entity in space
-            if ("layer" not in selector or entity.dxf.get("layer", "0") == selector["layer"])
-            and (
-                "handle" not in selector or entity.dxf.handle.upper() == selector["handle"].upper()
-            )
-        ]
-        if len(matches) != 1:
+        if "handle" in selector:
+            entity = handle_matches.get(selector["handle"].upper())
+            if entity is not None and "layer" in selector and entity.dxf.layer != selector["layer"]:
+                entity = None
+            count = int(entity is not None)
+        else:
+            entity, count = layer_matches.get(selector["layer"], (None, 0))
+        if count != 1:
             raise CadError(
-                "ROOM_EVIDENCE_MISSING" if not matches else "ROOM_EVIDENCE_AMBIGUOUS",
+                "ROOM_EVIDENCE_MISSING" if count == 0 else "ROOM_EVIDENCE_AMBIGUOUS",
                 "Each room role must identify exactly one entity.",
-                {"role": role, "count": len(matches), "selector": selector},
+                {"role": role, "count": count, "selector": selector},
             )
-        entity = matches[0]
-        record = engine._record(entity)
+        # Never allocate arbitrary polygon vertices or segments before proving
+        # the selected role has the tiny native shape required by this model.
+        if role == "footprint" or role.endswith(":elevation"):
+            if entity.dxftype() not in {"LWPOLYLINE", "POLYLINE"}:
+                raise CadError("UNSUPPORTED_ROOM_GEOMETRY", "Room boundary evidence must be a rectangle.",
+                               {"role": role})
+            count = len(entity) if entity.dxftype() == "LWPOLYLINE" else len(entity.vertices)
+            if count not in {4, 5}:
+                raise CadError("UNSUPPORTED_ROOM_GEOMETRY", "Room rectangle needs four corners, optionally repeated at closure.",
+                               {"role": role, "point_count": count})
+        record = engine._record(entity, fields=engine._QUERY_FIELDS - {"bounds", "bounds_kind"},
+                                vertex_limit=5)
+        _require_complete_record(record, role)
         evidence[role] = {
             "layout": space.name,
             "selector": selector,

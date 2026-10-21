@@ -21,7 +21,8 @@ from urllib.parse import quote
 import xml.etree.ElementTree as ET
 
 import numpy as np
-import trimesh
+
+from agentcad.room_model import load_glb_room_components
 
 
 AXES = ("length", "width", "height")
@@ -33,15 +34,10 @@ def read_json(path: Path):
 
 def mesh_payload(path: Path) -> dict:
     """Read serialized vertices and faces, including world node transforms."""
-    scene = trimesh.load_scene(path, process=False)
+    components, _, _ = load_glb_room_components(path)
     meshes = []
-    for node in sorted(scene.graph.nodes_geometry):
-        transform, geometry_name = scene.graph[node]
-        mesh = scene.geometry[geometry_name]
-        if not isinstance(mesh, trimesh.Trimesh):
-            raise ValueError(f"Non-triangular GLB geometry: {node}")
-        vertices = trimesh.transform_points(np.asarray(mesh.vertices), transform)
-        faces = np.asarray(mesh.faces, dtype=int)
+    for node, (vertices, faces) in sorted(components.items()):
+        faces = np.asarray(faces, dtype=int)
         if not np.isfinite(vertices).all() or faces.ndim != 2 or faces.shape[1] != 3:
             raise ValueError(f"Invalid GLB mesh: {node}")
         if not len(vertices) or not len(faces):
@@ -150,7 +146,7 @@ HTML = r'''<!doctype html>
 <section class="intro"><div><div class="eyebrow">CONTROLLED ROOM · EVIDENCE VIEWER</div><h1>完整房间，图纸与三维逐项对照</h1><p id="introText">读取真实模型与验收证据。</p></div><span class="run" id="runName"></span></section>
 <ol class="flow"><li><b>01</b>读取 DWG / DXF</li><li><b>02</b>核验长、宽、净高</li><li><b>03</b>原子修改并重建实体</li><li><b>04</b>重新打开三种格式独立复测</li></ol>
 <section class="workspace">
-<article class="card modelcard"><div class="cardhead"><h2>三维实体</h2><div class="segments" role="group" aria-label="切换修改前后"><button data-state="before">修改前</button><button data-state="after" class="active">修改后</button></div></div><div class="stage" id="stage"><canvas id="scene" tabindex="0" aria-label="实际房间三维模型，拖动旋转，滚轮缩放，方向键调整视角"></canvas><canvas id="overlay" aria-hidden="true"></canvas><div class="scene-label"><b id="sceneState"></b><span>实际 GLB 网格 · Z 轴向上</span></div><div class="scenehint">拖动旋转 · 滚轮缩放 · 方向键微调</div><div class="cut-note" id="cutNote"></div></div><div class="stage-controls"><div class="toggles"><label><input id="ceiling" type="checkbox">显示顶板</label><label><input id="southCut" type="checkbox">南墙剖切</label><label><input id="eastCut" type="checkbox" checked>东墙剖切</label><label><input id="guides" type="checkbox" checked>尺寸 / 门窗</label></div><button id="resetView" class="smallbtn">复位视角</button></div><div class="scenefoot"><span id="meshStats"></span><span>剖切仅影响显示；文件包含全部构件</span></div></article>
+<article class="card modelcard"><div class="cardhead"><h2>三维实体</h2><div class="segments" role="group" aria-label="切换修改前后"><button data-state="before">修改前</button><button data-state="after" class="active">修改后</button></div></div><div class="stage" id="stage"><canvas id="scene" tabindex="0" aria-label="实际房间三维模型，拖动旋转，滚轮缩放，方向键调整视角"></canvas><canvas id="overlay" aria-hidden="true"></canvas><div class="scene-label"><b id="sceneState"></b><span>glTF Y-up → 建筑 Z-up 显示</span></div><div class="scenehint">拖动旋转 · 滚轮缩放 · 方向键微调</div><div class="cut-note" id="cutNote"></div></div><div class="stage-controls"><div class="toggles"><label><input id="ceiling" type="checkbox">显示顶板</label><label><input id="southCut" type="checkbox">南墙剖切</label><label><input id="eastCut" type="checkbox" checked>东墙剖切</label><label><input id="guides" type="checkbox" checked>尺寸 / 门窗</label></div><button id="resetView" class="smallbtn">复位视角</button></div><div class="scenefoot"><span id="meshStats"></span><span>剖切仅影响显示；文件包含全部构件</span></div></article>
 <article class="card dimensions"><div class="cardhead"><h2>尺寸与重开验证</h2><span class="tiny">全部换算为 mm</span></div><div class="metricgrid" id="dimensionMetrics"></div><div class="tablewrap"><table><thead><tr><th>净尺寸</th><th>CAD 几何</th><th>重开 GLB</th><th>绝对误差</th></tr></thead><tbody id="dimensionRows"></tbody></table></div><p class="comparison-note">长、宽取墙内表面；净高取完成地面至顶板下表面。外包尺寸另列。</p><div class="construction" id="construction"></div><div class="verification-summary"><div><strong id="verificationTitle"></strong><small id="verificationNote"></small></div><span class="value" id="tolerance"></span></div></article>
 </section>
 <section class="lower"><article class="card"><div class="cardhead"><h2>原始 CAD 预览</h2><a id="previewLink" class="tiny" href="#">打开原始 SVG ↗</a></div><div class="planstage" id="plan"></div><div class="planfoot" id="planFoot"></div></article><article class="card"><div class="cardhead"><h2>真实门窗洞口</h2><span class="tiny">根据实体间隙复测</span></div><div class="opening-list" id="openings"></div><div class="openingnote">模型保留穿透墙厚的空洞。门扇、玻璃等示意线仅在原 CAD 中，不作为实体填入洞口。</div></article></section>

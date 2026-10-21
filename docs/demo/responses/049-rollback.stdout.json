@@ -12,5 +12,18 @@
       "layout": "Model",
       "operation_index": 1
     }
+  },
+  "output": {
+    "detail": "summary",
+    "max_bytes": 1048576,
+    "truncated": false,
+    "omitted_sections": 0,
+    "omissions": []
+  },
+  "resources": {
+    "elapsed_seconds": 2.032,
+    "peak_rss_bytes": 74342400,
+    "timeout_seconds": 60.0,
+    "max_memory_mb": 1024
   }
 }

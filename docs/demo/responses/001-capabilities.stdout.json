@@ -4,7 +4,7 @@
   "ok": true,
   "result": {
     "name": "tcad-agent",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "protocol_version": "1.0",
     "commands": [
       "capabilities",
@@ -13,13 +13,15 @@
       "info",
       "query",
       "measure",
+      "export",
       "new",
       "apply",
       "render",
       "convert",
       "room-extract",
       "room-model",
-      "room-verify"
+      "room-verify",
+      "setup-dwg"
     ],
     "transport": [
       "cli",
@@ -56,9 +58,21 @@
       "scope": "axis-aligned rectangular rooms with explicit wall and slab thicknesses"
     },
     "transactions": "One apply plan is atomic; batches are ordered and not atomic.",
+    "limits": {
+      "default_response_bytes": 32768,
+      "maximum_response_bytes": 1048576,
+      "default_input_file_mib": 128,
+      "default_result_file_mib": 64,
+      "default_timeout_seconds": 60,
+      "default_memory_mib": 1024,
+      "supervision": "CLI/JSONL workers; direct Python API is not supervised",
+      "query": "revision-bound SQLite pages; native entities, no automatic INSERT expansion",
+      "output": "Explicit omissions; use fields, vertex pages or result_file for details"
+    },
     "converters": {
       "libredwg": {
         "available": true,
+        "detection_source": "environment",
         "executable": "<libredwg>/dwg2dxf.exe",
         "environment_variable": "TCAD_DWG2DXF",
         "configured_path": "<libredwg>/dwg2dxf.exe",
@@ -69,6 +83,7 @@
       },
       "oda": {
         "available": false,
+        "detection_source": "PATH",
         "executable": null,
         "environment_variable": "TCAD_ODA_CONVERTER",
         "configured_path": null,
@@ -83,5 +98,18 @@
       "SVG appearance depends on fonts, external references and supported entity types.",
       "Measurements use drawing units; no inference of physical scale."
     ]
+  },
+  "output": {
+    "detail": "full",
+    "max_bytes": 1048576,
+    "truncated": false,
+    "omitted_sections": 0,
+    "omissions": []
+  },
+  "resources": {
+    "elapsed_seconds": 2.157,
+    "peak_rss_bytes": 73646080,
+    "timeout_seconds": 60.0,
+    "max_memory_mb": 1024
   }
 }

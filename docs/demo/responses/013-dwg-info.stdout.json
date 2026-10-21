@@ -4,6 +4,7 @@
   "ok": true,
   "result": {
     "path": "fixtures/controlled-complete-room.dwg",
+    "source_sha256": "d1ac64e11382f6345757fb21f4263877b70a2bcf4ff0dca2e554e33da63f5b1f",
     "dxf_version": "AC1015",
     "units": {
       "name": "mm",
@@ -226,26 +227,14 @@
         "frozen": false
       }
     ],
-    "bounds": {
-      "min": [
-        -1220.0,
-        -1888.867667121419,
-        0.0
-      ],
-      "max": [
-        26300.0,
-        6310.0,
-        0.0
-      ]
-    },
-    "bounds_kind": "approximate",
+    "bounds": null,
+    "bounds_kind": "not_requested",
+    "bounds_included": false,
     "warnings": [
-      "Bounds are approximate geometric extents; text extents depend on available fonts.",
       "DWG conversion may lose unsupported entities or properties; verify critical geometry."
     ],
     "source": "fixtures/controlled-complete-room.dwg",
     "conversion": {
-      "input": "fixtures/controlled-complete-room.dwg",
       "backend": "libredwg",
       "format": "dxf",
       "dxf_version": "AC1015",
@@ -253,8 +242,29 @@
         "DWG conversion may lose unsupported entities or properties; verify critical geometry."
       ],
       "diagnostics": {
-        "stdout": "Reading DWG file fixtures/controlled-complete-room.dwg\r\nWriting DXF file <temporary-file>\r\n"
+        "stdout": "Reading DWG file fixtures/controlled-complete-room.dwg\r\nWriting DXF file <cad-cache-file>\r\n"
+      },
+      "input": "fixtures/controlled-complete-room.dwg",
+      "source_sha256": "d1ac64e11382f6345757fb21f4263877b70a2bcf4ff0dca2e554e33da63f5b1f",
+      "normalized_dxf_sha256": "7c58c2da56d3c9eabbeb752b141e421b0bfb8077161242d3f49850d1c905a8f4",
+      "cache": {
+        "hit": false,
+        "persistent": true,
+        "validation": "sha256"
       }
     }
+  },
+  "output": {
+    "detail": "full",
+    "max_bytes": 1048576,
+    "truncated": false,
+    "omitted_sections": 0,
+    "omissions": []
+  },
+  "resources": {
+    "elapsed_seconds": 2.407,
+    "peak_rss_bytes": 84713472,
+    "timeout_seconds": 60.0,
+    "max_memory_mb": 1024
   }
 }

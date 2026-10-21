@@ -123,3 +123,63 @@ def test_query_returns_exact_3d_face_vertices(tmp_path):
     record = query_entities(source, types=["3DFACE"])["entities"][0]
     assert record["vertices"][:3] == [[0, 0, 0], [6000, 0, 0], [6000, 0, 3000]]
     assert record["coordinate_system"] == "WCS"
+
+
+@pytest.mark.parametrize("marker", [
+    {"geometry_page": {"offset": 0, "returned": 4, "total": 10, "has_more": True}},
+    {"geometry_page": {"offset": 1, "returned": 4, "total": 4, "has_more": False}},
+    {"truncation": {"points": {"complete": False, "reason": "byte_budget"}}},
+    {"point_count": 10},
+])
+def test_incomplete_query_evidence_cannot_be_accepted_as_a_rectangle(drawing, monkeypatch, marker):
+    from agentcad import engine
+
+    original = engine._record
+
+    def clipped(entity, *args, **kwargs):
+        record = original(entity, *args, **kwargs)
+        if entity.dxf.layer == "ROOM_CLEAR":
+            record.update(marker)
+        return record
+
+    monkeypatch.setattr(engine, "_record", clipped)
+    with pytest.raises(CadError) as error:
+        extract_room(drawing, factory.room_mapping())
+    assert error.value.code == "INCOMPLETE_ROOM_EVIDENCE"
+
+
+def test_complex_room_boundary_rejected_before_records_or_segments_are_expanded(drawing, monkeypatch):
+    from agentcad import engine
+
+    rewrite(drawing, lambda space: next(e for e in space if e.dxf.layer == "ROOM_CLEAR")
+            .set_points((index, 0) for index in range(10000)))
+    original = engine._record
+
+    def guarded(entity, *args, **kwargs):
+        assert entity.dxf.layer != "ROOM_CLEAR", "Complex boundary must fail before record allocation"
+        return original(entity, *args, **kwargs)
+
+    monkeypatch.setattr(engine, "_record", guarded)
+    with pytest.raises(CadError) as error:
+        extract_room(drawing, factory.room_mapping())
+    assert error.value.code == "UNSUPPORTED_ROOM_GEOMETRY"
+    assert error.value.details["point_count"] == 10000
+
+
+def test_extract_room_walks_native_layout_once_for_all_selectors(drawing, monkeypatch):
+    from agentcad import engine
+
+    original = engine._layout
+    traversals = []
+
+    class LayoutOnce:
+        def __init__(self, layout):
+            self.layout, self.name = layout, layout.name
+
+        def __iter__(self):
+            traversals.append(True)
+            return iter(self.layout)
+
+    monkeypatch.setattr(engine, "_layout", lambda *args: LayoutOnce(original(*args)))
+    assert extract_room(drawing, factory.room_mapping())["spec"]["dimensions"]["height"] == 3000
+    assert len(traversals) == 1

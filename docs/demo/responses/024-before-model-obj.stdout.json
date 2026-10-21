@@ -9,7 +9,8 @@
     "model_units": "m",
     "source_units": "mm",
     "drawing_unit_to_m": 0.001,
-    "coordinate_frame": "local XYZ; interior southwest finished floor is (0, 0, 0)",
+    "coordinate_frame": "local Z-up XYZ; southwest floor origin",
+    "model_schema_version": "tcad-room-2.0",
     "source_origin": [
       0.0,
       0.0,
@@ -19,6 +20,9 @@
     "verification": {
       "passed": true,
       "verified": true,
+      "model_verified": true,
+      "source_verified": false,
+      "verification_scope": "model_against_spec",
       "model_path": "models/before.obj",
       "source_units": "mm",
       "drawing_unit_to_m": 0.001,
@@ -196,13 +200,29 @@
       "components": {
         "count": 11,
         "each_component_watertight": true,
+        "each_component_outward_normals": true,
+        "each_component_positive_volume": true,
         "assembly_boolean_union": false
       },
       "limitations": [
         "Verification supports named, closed, axis-aligned rectangular components.",
         "Components are separate solids; no fused watertight assembly is claimed.",
-        "OBJ has no standardized unit field; its API coordinate contract is metres."
+        "OBJ has no standardized unit field; its API coordinate contract is metres.",
+        "This result verifies the model against the supplied spec, without rereading source CAD."
       ]
     }
+  },
+  "output": {
+    "detail": "full",
+    "max_bytes": 1048576,
+    "truncated": false,
+    "omitted_sections": 0,
+    "omissions": []
+  },
+  "resources": {
+    "elapsed_seconds": 2.922,
+    "peak_rss_bytes": 84291584,
+    "timeout_seconds": 60.0,
+    "max_memory_mb": 1024
   }
 }

@@ -6,7 +6,7 @@
     "python": "3.12.13",
     "executable": "<python>",
     "packages": {
-      "tcad-agent": "0.1.0",
+      "tcad-agent": "0.2.0",
       "ezdxf": "1.4.3",
       "jsonschema": "4.26.0",
       "Pillow": "12.3.0",
@@ -15,6 +15,7 @@
     "converters": {
       "libredwg": {
         "available": true,
+        "detection_source": "environment",
         "executable": "<libredwg>/dwg2dxf.exe",
         "environment_variable": "TCAD_DWG2DXF",
         "configured_path": "<libredwg>/dwg2dxf.exe",
@@ -25,6 +26,7 @@
       },
       "oda": {
         "available": false,
+        "detection_source": "PATH",
         "executable": null,
         "environment_variable": "TCAD_ODA_CONVERTER",
         "configured_path": null,
@@ -35,5 +37,18 @@
     },
     "dxf_backend": "ready",
     "svg_backend": "ready"
+  },
+  "output": {
+    "detail": "full",
+    "max_bytes": 1048576,
+    "truncated": false,
+    "omitted_sections": 0,
+    "omissions": []
+  },
+  "resources": {
+    "elapsed_seconds": 2.375,
+    "peak_rss_bytes": 74186752,
+    "timeout_seconds": 60.0,
+    "max_memory_mb": 1024
   }
 }

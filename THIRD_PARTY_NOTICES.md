@@ -13,6 +13,7 @@ own packages; their license and copyright files remain in those distributions.
 | [trimesh](https://github.com/mikedh/trimesh/blob/main/LICENSE.md) | MIT | Mesh creation, loading and serialized room verification |
 | [Pillow](https://github.com/python-pillow/Pillow/blob/main/LICENSE) | MIT-CMU | Image/font support used by rendering |
 | [jsonschema](https://github.com/python-jsonschema/jsonschema/blob/main/COPYING) | MIT | Declarative command and editing-plan validation |
+| [psutil](https://github.com/giampaolo/psutil/blob/master/LICENSE) | BSD-3-Clause | Supervised worker and descendant process memory accounting |
 
 Transitive and development dependencies, including NumPy, fontTools, pyparsing,
 typing_extensions, attrs, referencing, rpds-py, pytest and Ruff, retain their

@@ -1,0 +1,182 @@
+{
+  "schema_version": "large-drawing-benchmark-1",
+  "entity_count": 100000,
+  "source_bytes": 27598154,
+  "generation_seconds": 11.75445629999922,
+  "environment": {
+    "platform": "Windows-10-10.0.19045-SP0",
+    "python": "3.12.13",
+    "cpu_count": 16
+  },
+  "scenarios": [
+    {
+      "scenario": "cold",
+      "seconds": [
+        20.08387820000098
+      ],
+      "p50_seconds": 20.08387820000098,
+      "max_seconds": 20.08387820000098,
+      "response_bytes": [
+        5062
+      ],
+      "returned": [
+        100
+      ],
+      "matched_total": 100000,
+      "peak_rss_bytes": 303710208,
+      "read_document_calls": 1,
+      "record_calls": 100000
+    },
+    {
+      "scenario": "warm_pages",
+      "seconds": [
+        0.037229999999908614,
+        0.01647640000010142,
+        0.01645269999971788,
+        0.019169999999576248,
+        0.01783660000000964,
+        0.016604399999778252,
+        0.017128199999206117,
+        0.019656399999803398,
+        0.016495699999723,
+        0.021300200000041514
+      ],
+      "p50_seconds": 0.01748239999960788,
+      "max_seconds": 0.037229999999908614,
+      "response_bytes": [
+        5072,
+        5161,
+        5161,
+        5161,
+        5161,
+        5161,
+        5161,
+        5161,
+        5163,
+        5163
+      ],
+      "returned": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "matched_total": 100000,
+      "peak_rss_bytes": 62816256,
+      "read_document_calls": 0,
+      "record_calls": 0
+    },
+    {
+      "scenario": "filter",
+      "seconds": [
+        7.667921299998852
+      ],
+      "p50_seconds": 7.667921299998852,
+      "max_seconds": 7.667921299998852,
+      "response_bytes": [
+        5112
+      ],
+      "returned": [
+        100
+      ],
+      "matched_total": 5000,
+      "peak_rss_bytes": 221700096,
+      "read_document_calls": 1,
+      "record_calls": 5000
+    },
+    {
+      "scenario": "projected_geometry",
+      "seconds": [
+        7.365678500000286
+      ],
+      "p50_seconds": 7.365678500000286,
+      "max_seconds": 7.365678500000286,
+      "response_bytes": [
+        6888
+      ],
+      "returned": [
+        100
+      ],
+      "matched_total": 5000,
+      "peak_rss_bytes": 221777920,
+      "read_document_calls": 1,
+      "record_calls": 5000
+    },
+    {
+      "scenario": "bounded",
+      "seconds": [
+        0.03604989999985264
+      ],
+      "p50_seconds": 0.03604989999985264,
+      "max_seconds": 0.03604989999985264,
+      "response_bytes": [
+        2661
+      ],
+      "returned": [
+        46
+      ],
+      "matched_total": 100000,
+      "peak_rss_bytes": 62599168,
+      "read_document_calls": 0,
+      "record_calls": 0
+    }
+  ],
+  "checks": {
+    "entities_at_least_100k": true,
+    "source_at_least_20mib": true,
+    "cold_within_budget": true,
+    "warm_pages_within_budget": true,
+    "all_rss_measured": true,
+    "all_rss_within_budget": true,
+    "warm_does_not_parse_or_format_source": true,
+    "filter_formats_only_matches": true,
+    "stdout_results_bounded": true
+  },
+  "thresholds": {
+    "cold_max_seconds": 180,
+    "warm_page_max_seconds": 1,
+    "peak_rss_max_mib": 1024
+  },
+  "passed": true,
+  "cli_end_to_end": {
+    "pages": 3,
+    "seconds": [
+      1.2480622000002768,
+      1.2177995000001829,
+      1.2571440000010625
+    ],
+    "median_seconds": 1.2480622000002768,
+    "stdout_bytes": [
+      3006,
+      3007,
+      3009
+    ],
+    "resources": [
+      {
+        "elapsed_seconds": 0.86,
+        "peak_rss_bytes": 44208128,
+        "timeout_seconds": 60.0,
+        "max_memory_mb": 1024
+      },
+      {
+        "elapsed_seconds": 0.844,
+        "peak_rss_bytes": 42446848,
+        "timeout_seconds": 60.0,
+        "max_memory_mb": 1024
+      },
+      {
+        "elapsed_seconds": 0.86,
+        "peak_rss_bytes": 43442176,
+        "timeout_seconds": 60.0,
+        "max_memory_mb": 1024
+      }
+    ],
+    "includes_startup_imports_supervision": true
+  }
+}

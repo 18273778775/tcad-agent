@@ -1,13 +1,14 @@
 * text=auto
 *.py text eol=lf
 *.ps1 text eol=lf
+*.sh text eol=lf
 *.md text eol=lf
 *.toml text eol=lf
 *.json text eol=lf
 *.jsonl text eol=lf
 *.html text eol=lf
 *.svg -text
-*.dxf -text
+*.dxf -text whitespace=cr-at-eol
 *.dwg binary
 *.obj -text
 *.glb binary

@@ -20,3 +20,16 @@
 运行时没有复制闭源 CAD 包中的 DLL。LibreDWG 下载由独立脚本显式执行，保留原包
 授权材料；外部进程边界不构成对所有再分发场景的许可证法律结论。
 ODA 只作为兼容性调研对象，未随项目提供，实际支持情况以 capabilities/doctor 返回为准。
+
+## 0.2.0 安装与资源控制补充（2026-10-21）
+
+| 项目 | 已采用的机制 | 适用边界 |
+| --- | --- | --- |
+| [astral-sh/uv](https://github.com/astral-sh/uv) | 固定发行 tag 的 `uv tool install`、隔离工具环境、源码目录外安装验收 | 可由 uv 管理 Python；首次安装仍需下载依赖。另提供 pipx 和 Python/pip 用户安装器。 |
+| [giampaolo/psutil](https://github.com/giampaolo/psutil) | 监管自有 worker 及后代进程的 RSS、超时后终止进程树 | RSS 采样不等于操作系统硬内存配额；不能证明瞬时分配永不超限。 |
+| [SQLite](https://www.sqlite.org/queryplanner.html) | 标准库 SQLite 的组合索引、持久结果快照和游标分页 | 首次解析仍由 ezdxf 完成；新过滤/投影可能重新读图。缓存具有容量和视图数量限制。 |
+
+选择依据是公开接口和实际安装/大图测试，而非复制另一个 CLI 的外观。
+具体接口依据 [uv 工具指南](https://docs.astral.sh/uv/guides/tools/) 与
+[psutil 进程接口](https://psutil.readthedocs.io/stable/)。当前查询实测、输出预算和
+不适用情形分别见 [性能记录](large-drawing-performance.md) 与 [Agent 调用指南](agent-usage.md)。

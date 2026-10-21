@@ -5,6 +5,9 @@
 专供 agent 使用的无界面 2D CAD CLI。支持 DXF 读取、分页查询、精确测量、
 JSON 事务编辑、SVG 预览，以及通过 LibreDWG 读取 DWG。
 普通命令默认输出 JSON；提供可发现的 JSON Schema、稳定错误码和 JSONL 标准输入服务。
+0.2.0 默认响应预算为 **32 KiB**，支持持久游标、字段投影、顶点分页、完整 JSONL 文件导出、
+时间/内存监督和并发版本检查。用法见 [Agent 调用指南](docs/agent-usage.md)；
+100k 实体、26.32 MiB 图纸的实测与限制见 [大图性能](docs/large-drawing-performance.md)。
 另提供显式映射的完整矩形房间提取、GLB/OBJ/三维 DXF 建模和文件回读核验。
 已跑通长宽高事务修改后的完整验收，见 [房间流程与实测结果](docs/room-workflow.md)。
 
@@ -14,65 +17,73 @@ JSON 事务编辑、SVG 预览，以及通过 LibreDWG 读取 DWG。
 
 ![完整房间模型与 CAD 尺寸对照](docs/assets/room-validation.jpg)
 
-完整房间样例已通过 55 次 CLI 调用和 91 项测试。净尺寸从
+完整房间样例已通过 55 次 CLI 调用，六个模型均通过当前源图重新提取与文件回读核验。
+本轮全量测试为 204 passed、1 项可选隔离安装测试跳过、9 subtests passed。净尺寸从
 6000 × 4500 × 3000 mm 事务修改为 6400 × 4800 × 3200 mm 后，
 重新打开三维模型的最大净尺寸误差为 0.000191 mm（容差 0.01 mm）。
 这是显式映射的受控房间验收，不代表任意施工图自动识别。
 公开的验收记录、六个模型和离线交互页位于 [docs/demo/](docs/demo/README.md)。
 下载仓库后，可直接用浏览器打开 `docs/demo/viewer.html`。
 
-## 安装与直接运行
+## 一行安装
 
-Windows PowerShell，Python 3.11+；有 uv 时自动使用 uv。
+已有 [uv](https://docs.astral.sh/uv/getting-started/installation/) 和 Git 时，Windows、Linux、macOS 通用，无需手工 clone：
 
-```powershell
-git clone https://github.com/18273778775/tcad-agent.git
-cd tcad-agent
-.\scripts\bootstrap.ps1 -WithDwg
-.\tcad.ps1 doctor
-.\tcad.ps1 capabilities
+```sh
+uv tool install --python 3.12 git+https://github.com/18273778775/tcad-agent.git@v0.2.0
 ```
 
-`-WithDwg` 在项目 `.tools/` 内下载固定版本的官方 LibreDWG，并校验 SHA-256。
-只处理 DXF 时可以省略。脚本不修改系统 PATH。
-`tcad.ps1` 自动发现本地转换器，也接受环境变量 `TCAD_DWG2DXF`。
+安装后运行 `tcad capabilities` 和 `tcad schema request`。如果 uv 提示命令目录不在 PATH，
+执行 `uv tool update-shell` 后重开终端。已有 pipx 也可直接运行
+`pipx install git+https://github.com/18273778775/tcad-agent.git@v0.2.0`。
 
-安装后也可使用虚拟环境内命令，或激活环境后直接使用 `tcad`：
+没有 uv 或 Git 的 Windows 用户，在 **Python 3.11+** 的 PowerShell 中执行：
 
 ```powershell
-.\.venv\Scripts\tcad.exe capabilities
-$env:TCAD_DWG2DXF = (Resolve-Path '.tools\libredwg-0.14\dwg2dxf.exe').Path
-.\.venv\Scripts\python.exe -m agentcad doctor
+irm https://raw.githubusercontent.com/18273778775/tcad-agent/v0.2.0/scripts/install.ps1 | iex
 ```
 
-在其他平台执行 `python -m pip install -e .`，将平台对应的 `dwg2dxf` 放到 PATH
-或设置 `TCAD_DWG2DXF`。附带转换器安装脚本仅支持 Windows。
+此脚本创建用户隔离环境、安装 `tcad` 命令并更新用户 PATH，当前 PowerShell 立即可用，
+无需管理员。安装来自固定 GitHub 版本；目前未宣称已发布 PyPI 包。
+其他安装、升级、卸载及离线 wheel 用法见 [安装文档](docs/installation.md)。
+
+DWG 支持独立安装，在 Windows x64 中显式执行一次：
+
+```sh
+tcad setup-dwg
+tcad doctor
+```
+
+命令仅下载固定官方 LibreDWG 0.14，校验 SHA-256 并保留其 GPL 许可证；放置在用户数据目录，
+不依赖源码目录、不修改系统 PATH。DXF 无需转换器。其他平台自行安装 LibreDWG，
+将 `dwg2dxf` 放到 PATH 或设置 `TCAD_DWG2DXF`。
 
 ## 一次完整的图纸流程
 
 ```powershell
 New-Item -ItemType Directory -Force artifacts | Out-Null
-.\tcad.ps1 apply --plan examples/plate.json --output artifacts/plate.dxf
-.\tcad.ps1 info artifacts/plate.dxf
-.\tcad.ps1 query artifacts/plate.dxf --type CIRCLE --layer HOLES --limit 10
-.\tcad.ps1 render artifacts/plate.dxf --output artifacts/plate.svg
+Invoke-WebRequest https://raw.githubusercontent.com/18273778775/tcad-agent/v0.2.0/examples/plate.json -OutFile artifacts/plate-plan.json
+tcad apply --plan artifacts/plate-plan.json --output artifacts/plate.dxf
+tcad info artifacts/plate.dxf
+tcad query artifacts/plate.dxf --type CIRCLE --layer HOLES --limit 10
+tcad render artifacts/plate.dxf --output artifacts/plate.svg
 ```
 
-`examples/plate.json` 创建 120×80 mm 外轮廓、4 个 R5 孔、参照线和文字。
+下载的 [examples/plate.json](examples/plate.json) 创建 120×80 mm 外轮廓、4 个 R5 孔、参照线和文字。
 `query` 返回 DXF 原生 handle；随后将查询到的 handle 传给测量或编辑命令：
 
 ```powershell
-.\tcad.ps1 measure artifacts/plate.dxf --handle <查询到的handle>
-.\tcad.ps1 query artifacts/plate.dxf --bbox 0 0 50 50 --offset 0 --limit 100
-.\tcad.ps1 query artifacts/plate.dxf --type TEXT --text '120'
+tcad measure artifacts/plate.dxf --handle <查询到的handle>
+tcad query artifacts/plate.dxf --bbox 0 0 50 50 --offset 0 --limit 100
+tcad query artifacts/plate.dxf --type TEXT --text '120'
 ```
 
-DWG 文件可直接传入 `info/query/measure/render/apply --input`，内部会先生成临时 DXF。
+DWG 文件可直接传入 `info/query/measure/render/apply --input`，内部复用按源 SHA 绑定的转换缓存。
 也可显式转换并保留中间文件：
 
 ```powershell
-.\tcad.ps1 convert drawing.dwg --output artifacts/imported.dxf --timeout 60
-.\tcad.ps1 info drawing.dwg
+tcad convert drawing.dwg --output artifacts/imported.dxf --timeout 60
+tcad info drawing.dwg
 ```
 
 ## 编辑计划
@@ -80,10 +91,10 @@ DWG 文件可直接传入 `info/query/measure/render/apply --input`，内部会�
 计划是声明式 JSON，不执行 Python 或 shell。获取准确格式：
 
 ```powershell
-.\tcad.ps1 schema plan
-.\tcad.ps1 schema request
-.\tcad.ps1 apply --input artifacts/plate.dxf --plan edits.json --output artifacts/revised.dxf --dry-run
-.\tcad.ps1 apply --input artifacts/plate.dxf --plan edits.json --output artifacts/revised.dxf
+tcad schema plan
+tcad schema request
+tcad apply --input artifacts/plate.dxf --plan edits.json --output artifacts/revised.dxf --dry-run
+tcad apply --input artifacts/plate.dxf --plan edits.json --output artifacts/revised.dxf
 ```
 
 每个计划中的操作按顺序执行。全部验证和修改成功后才原子发布输出。
@@ -136,7 +147,7 @@ DWG 文件可直接传入 `info/query/measure/render/apply --input`，内部会�
 持续进程服务：
 
 ```powershell
-.\tcad.ps1 serve
+tcad serve
 ```
 
 向 stdin 每行发送一个请求，每个输入行都得到一个独立 JSON 响应，id 原样关联：
@@ -165,14 +176,26 @@ DWG 文件可直接传入 `info/query/measure/render/apply --input`，内部会�
 - 编辑位于 Model 空间；读取和预览可以指定命名布局。
 - 不提供通用 3D 实体建模、几何约束求解、自动标注或真实 AutoCAD 兼容性的保证。
   房间建模限定于显式映射的轴对齐矩形房间和长方体构件网格。
+  完整验收中的尺寸修改采用受控图纸重建；尚无通用墙体、门窗及尺寸标注依赖求解器。
+- 本版本没有 Excel 命令，也不提供无上限的逐段表格导出。完整支持字段可导出至有预算的 JSONL 文件。
 - DWG 后端可能遗漏复杂对象；SVG 为 2D 投影，字体会替代，外部参照不会自动解析，
   链接光栅以矩形表示。关键工程数据应检查转换诊断和输出图纸。
 
 ## 验证
 
+源码开发才需要 clone：
+
+```powershell
+git clone https://github.com/18273778775/tcad-agent.git
+cd tcad-agent
+.\scripts\bootstrap.ps1
+```
+
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\ruff.exe check --select E4,E7,E9,F src tests
+$env:TCAD_TEST_DISTRIBUTION = '1'
+.\.venv\Scripts\python.exe -m pytest tests/test_distribution.py -q
 ```
 
 复现真实 DWG 测试前，运行 `.\scripts\install-libredwg.ps1 -IncludeTestFixture`。

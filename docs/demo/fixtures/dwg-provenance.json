@@ -98,10 +98,10 @@
       "process_only_path_prefix": "<libredwg>"
     }
   ],
-  "sha256": "9803677596554a2963b6d3dbfcc05df3f94e584e72d4e896498678d8f24b2555",
-  "roundtrip_sha256": "1f156bff07c02a885426a24046d23533a4bc6cbfe1a73a1b37711a6f6833970d",
+  "sha256": "d1ac64e11382f6345757fb21f4263877b70a2bcf4ff0dca2e554e33da63f5b1f",
+  "roundtrip_sha256": "7c58c2da56d3c9eabbeb752b141e421b0bfb8077161242d3f49850d1c905a8f4",
   "instructions_sha256": "eda0724827747f7586c7111d2df4b2be799481117acb228149660c33131d5768",
-  "configured_source_sha256": "31e344fcde7ed65677dbf62347b74f8105b6bfb61e5f826e3e085e52ba4eacd9",
+  "configured_source_sha256": "1231d948dbe05d697b73baa07efed139597e7b317336b50f76d0fad5d2ecaf66",
   "publication_paths_normalized": true,
   "publication_note": "Sanitized public copy; execution paths normalized; original numeric evidence and recorded artifact hashes retained. See README.md."
 }

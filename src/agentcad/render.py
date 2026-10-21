@@ -11,7 +11,9 @@ from .errors import CadError
 from .io import atomic_output, read_document
 
 
-def render_drawing(input_path, output_path, layout="Model", overwrite=False):
+def render_drawing(input_path, output_path, layout="Model", overwrite=False,
+                   types=None, layer=None, handles=None, max_entities=20000,
+                   max_svg_bytes=8 * 1024 * 1024):
     """Render one named layout to SVG without launching a GUI."""
     source = Path(input_path).expanduser().resolve()
     target = Path(output_path).expanduser().resolve()
@@ -19,6 +21,24 @@ def render_drawing(input_path, output_path, layout="Model", overwrite=False):
         raise CadError("UNSUPPORTED_FORMAT", "Preview output must have a .svg extension.")
     if not isinstance(layout, str) or not layout.strip():
         raise CadError("INVALID_LAYOUT", "A nonempty layout name is required.")
+    if type(max_entities) is not int or not 1 <= max_entities <= 100000:
+        raise CadError("INVALID_ARGUMENT", "max_entities must be between 1 and 100000.")
+    if type(max_svg_bytes) is not int or not 1024 <= max_svg_bytes <= 64 * 1024 * 1024:
+        raise CadError("INVALID_ARGUMENT", "max_svg_bytes must be between 1024 and 67108864.")
+    if types is not None and (not isinstance(types, list) or
+                              any(not isinstance(item, str) or not item for item in types)):
+        raise CadError("INVALID_ARGUMENT", "Types must be entity type names.")
+    if layer is not None and not isinstance(layer, str):
+        raise CadError("INVALID_ARGUMENT", "Layer must be a string.")
+    selected_types = {item.upper() for item in types} if types is not None else None
+    if handles is not None:
+        from .engine import _validate_handles
+        handles = set(_validate_handles(handles))
+
+    def included(entity):
+        return ((selected_types is None or entity.dxftype() in selected_types) and
+                (layer is None or entity.dxf.get("layer", "0") == layer) and
+                (handles is None or entity.dxf.handle.upper() in handles))
     try:
         from ezdxf.addons.drawing import Frontend, RenderContext, svg
         from ezdxf.addons.drawing import layout as page_layout
@@ -45,12 +65,20 @@ def render_drawing(input_path, output_path, layout="Model", overwrite=False):
             raise CadError(
                 "EMPTY_DRAWING", "The selected layout has no entities.", {"layout": selected.name}
             )
+        selected_count = sum(1 for entity in selected if included(entity))
+        if selected_count > max_entities:
+            raise CadError("RENDER_SELECTION_TOO_LARGE", "Preview selection exceeds its entity budget; "
+                           "filter by type/layer/handle or explicitly raise max_entities.",
+                           {"selected": selected_count, "max_entities": max_entities})
+        if not selected_count:
+            raise CadError("EMPTY_DRAWING", "No entities match this preview selection.")
         try:
             backend = svg.SVGBackend()
             # Linked raster files are represented by their rectangles. A preview
             # must remain self-contained and must not depend on linked file paths.
             config = Configuration(image_policy=ImagePolicy.RECT)
-            Frontend(RenderContext(document), backend, config=config).draw_layout(selected)
+            Frontend(RenderContext(document), backend, config=config).draw_layout(
+                selected, filter_func=included)
             bounds = backend.player().bbox()
             if not backend.records or not bounds.has_data:
                 raise CadError(
@@ -65,12 +93,12 @@ def render_drawing(input_path, output_path, layout="Model", overwrite=False):
             bounds = BoundingBox2d(
                 [
                     (
-                        minimum.x - (padding if size.x == 0 else 0),
-                        minimum.y - (padding if size.y == 0 else 0),
+                        minimum.x - padding,
+                        minimum.y - padding,
                     ),
                     (
-                        maximum.x + (padding if size.x == 0 else 0),
-                        maximum.y + (padding if size.y == 0 else 0),
+                        maximum.x + padding,
+                        maximum.y + padding,
                     ),
                 ]
             )
@@ -83,6 +111,11 @@ def render_drawing(input_path, output_path, layout="Model", overwrite=False):
                 max(bounds.size.x * preview_scale, 1.0), max(bounds.size.y * preview_scale, 1.0)
             )
             rendered = backend.get_string(page, render_box=bounds)
+            output_bytes = len(rendered.encode("utf-8"))
+            if output_bytes > max_svg_bytes:
+                raise CadError("PREVIEW_TOO_LARGE", "SVG exceeds its output file budget; "
+                               "reduce the preview selection.",
+                               {"bytes": output_bytes, "max_bytes": max_svg_bytes})
             root = ElementTree.fromstring(rendered)
             if "viewBox" not in root.attrib:
                 raise CadError("EMPTY_DRAWING", "The renderer produced an empty preview.")
@@ -110,6 +143,10 @@ def render_drawing(input_path, output_path, layout="Model", overwrite=False):
         "output": str(target),
         "format": "svg",
         "layout": selected.name,
-        "entity_count": len(selected),
+        "entity_count": selected_count,
+        "layout_entity_count": len(selected),
+        "bytes": output_bytes,
+        "max_entities": max_entities,
+        "selection_scope": "native layout entities; nested block rendering is supervised by resource limits",
         "warnings": warnings,
     }

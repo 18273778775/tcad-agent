@@ -8,6 +8,10 @@
     "format": "svg",
     "layout": "Model",
     "entity_count": 71,
+    "layout_entity_count": 71,
+    "bytes": 85868,
+    "max_entities": 20000,
+    "selection_scope": "native layout entities; nested block rendering is supervised by resource limits",
     "warnings": [
       "SVG is fitted to a preview page of at most 420 mm per side; its physical size is not drawing scale.",
       "Preview uses a 2D top projection; ACIS solids and some 3D features are unsupported.",
@@ -15,5 +19,18 @@
       "External references are not resolved; linked raster images are shown as rectangles."
     ],
     "source": "revised-complete-room.dxf"
+  },
+  "output": {
+    "detail": "full",
+    "max_bytes": 1048576,
+    "truncated": false,
+    "omitted_sections": 0,
+    "omissions": []
+  },
+  "resources": {
+    "elapsed_seconds": 2.36,
+    "peak_rss_bytes": 85319680,
+    "timeout_seconds": 60.0,
+    "max_memory_mb": 1024
   }
 }

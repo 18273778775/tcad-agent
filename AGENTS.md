@@ -19,6 +19,19 @@ Never infer a measurement from an approximate text extent or assume drawing unit
 When `length_complete` is false, report the incomplete selection. Entity areas are
 not a Boolean union. `--dry-run` validates changes before publication.
 
+Default stdout is bounded to 32 KiB. Check `output.truncated`, record `truncation`
+and `geometry_page` before treating detail as complete. Prefer `--fields` and
+`--no-provenance`, follow `next_cursor` with unchanged filters/projection, and use
+`export --output selected.jsonl` for complete supported native fields outside the
+agent context. `--result-file` preserves the selected result/current page, not the
+whole drawing. Batch reports preserve all executed child responses; inspect their
+artifact instead of replaying mutations to recover omitted inline outcomes.
+
+Use `source_sha256` for `--expected-source-sha256`; `source_revision` is a snapshot
+token, not a cryptographic edit condition. Cooperating writers serialize commits.
+CLI requests run in supervised workers (60 s / 1024 MiB defaults); budget failures
+are structured, and a completed atomic commit may exist after cancellation.
+
 Existing output requires explicit overwrite. Preserve the source unless the user
 asks to replace it. Batch requests continue after an individual failure; a batch
 is not atomic. DWG editing produces DXF output in this version.
@@ -33,6 +46,11 @@ Height requires explicit elevation evidence; missing height is an error.
 Room dimensions mean clear interior dimensions, not total assembly bounds.
 This models axis-aligned rectangular rooms with explicit plan/elevation roles;
 do not claim automatic recognition of arbitrary plans. See docs/room-workflow.md.
+
+Add `--source drawing.dwg --mapping map.json` to `room-verify` for strict current
+source re-extraction and model comparison. Without these flags, model/spec
+consistency alone is verified. GLB uses the versioned standard Y-up convention;
+legacy unmarked room GLBs require regeneration.
 
 ## Development
 

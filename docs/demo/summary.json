@@ -2,8 +2,8 @@
   "passed": true,
   "fixture_classification": "controlled complete-room acceptance drawing; not an external building project",
   "source_sha256": {
-    "fixtures/controlled-complete-room.dxf": "65773c19dde9ce4ee5b00afbd079683708a697845bc4703030428b2cb47d302d",
-    "fixtures/controlled-complete-room.dwg": "9803677596554a2963b6d3dbfcc05df3f94e584e72d4e896498678d8f24b2555"
+    "fixtures/controlled-complete-room.dxf": "570aa9ad74b243090afa8af99340b15ea0f3b3900f1935f35c9c84b8090ae48d",
+    "fixtures/controlled-complete-room.dwg": "d1ac64e11382f6345757fb21f4263877b70a2bcf4ff0dca2e554e33da63f5b1f"
   },
   "source_preserved": true,
   "before": {
@@ -55,10 +55,13 @@
     "models": {
       "glb": {
         "output": "models/before.glb",
-        "sha256": "18d198ba39bbc6723e51b425b6ca6d7a17c5d9259e7098659c79acf0d2090b4f",
+        "sha256": "d0623456addc6860931f3885f10738fcb53112e5016d064247ca1d0aa988fc34",
         "verification": {
           "passed": true,
           "verified": true,
+          "model_verified": true,
+          "source_verified": true,
+          "verification_scope": "source_and_model_against_spec",
           "model_path": "models/before.glb",
           "source_units": "mm",
           "drawing_unit_to_m": 0.001,
@@ -236,12 +239,163 @@
           "components": {
             "count": 11,
             "each_component_watertight": true,
+            "each_component_outward_normals": true,
+            "each_component_positive_volume": true,
             "assembly_boolean_union": false
           },
           "limitations": [
             "Verification supports named, closed, axis-aligned rectangular components.",
             "Components are separate solids; no fused watertight assembly is claimed.",
             "OBJ has no standardized unit field; its API coordinate contract is metres."
+          ],
+          "source": {
+            "path": "fixtures/controlled-complete-room.dwg",
+            "sha256": "d1ac64e11382f6345757fb21f4263877b70a2bcf4ff0dca2e554e33da63f5b1f",
+            "format": "dwg"
+          },
+          "source_checks": [
+            {
+              "name": "units",
+              "passed": true
+            },
+            {
+              "name": "drawing_unit_to_m",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin:count",
+              "passed": true
+            },
+            {
+              "name": "origin[0]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin[1]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin[2]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions:keys",
+              "passed": true
+            },
+            {
+              "name": "dimensions.length",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions.width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions.height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction:keys",
+              "passed": true
+            },
+            {
+              "name": "construction.wall_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction.floor_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction.ceiling_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings:count",
+              "passed": true
+            },
+            {
+              "name": "openings[0]:keys",
+              "passed": true
+            },
+            {
+              "name": "openings[0].kind",
+              "passed": true
+            },
+            {
+              "name": "openings[0].height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].sill",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].id",
+              "passed": true
+            },
+            {
+              "name": "openings[0].width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].wall",
+              "passed": true
+            },
+            {
+              "name": "openings[0].offset",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1]:keys",
+              "passed": true
+            },
+            {
+              "name": "openings[1].kind",
+              "passed": true
+            },
+            {
+              "name": "openings[1].height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].sill",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].id",
+              "passed": true
+            },
+            {
+              "name": "openings[1].width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].wall",
+              "passed": true
+            },
+            {
+              "name": "openings[1].offset",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            }
           ]
         }
       },
@@ -251,6 +405,9 @@
         "verification": {
           "passed": true,
           "verified": true,
+          "model_verified": true,
+          "source_verified": true,
+          "verification_scope": "source_and_model_against_spec",
           "model_path": "models/before.obj",
           "source_units": "mm",
           "drawing_unit_to_m": 0.001,
@@ -428,21 +585,175 @@
           "components": {
             "count": 11,
             "each_component_watertight": true,
+            "each_component_outward_normals": true,
+            "each_component_positive_volume": true,
             "assembly_boolean_union": false
           },
           "limitations": [
             "Verification supports named, closed, axis-aligned rectangular components.",
             "Components are separate solids; no fused watertight assembly is claimed.",
             "OBJ has no standardized unit field; its API coordinate contract is metres."
+          ],
+          "source": {
+            "path": "fixtures/controlled-complete-room.dwg",
+            "sha256": "d1ac64e11382f6345757fb21f4263877b70a2bcf4ff0dca2e554e33da63f5b1f",
+            "format": "dwg"
+          },
+          "source_checks": [
+            {
+              "name": "units",
+              "passed": true
+            },
+            {
+              "name": "drawing_unit_to_m",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin:count",
+              "passed": true
+            },
+            {
+              "name": "origin[0]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin[1]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin[2]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions:keys",
+              "passed": true
+            },
+            {
+              "name": "dimensions.width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions.height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions.length",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction:keys",
+              "passed": true
+            },
+            {
+              "name": "construction.wall_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction.floor_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction.ceiling_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings:count",
+              "passed": true
+            },
+            {
+              "name": "openings[0]:keys",
+              "passed": true
+            },
+            {
+              "name": "openings[0].sill",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].offset",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].wall",
+              "passed": true
+            },
+            {
+              "name": "openings[0].kind",
+              "passed": true
+            },
+            {
+              "name": "openings[0].height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].id",
+              "passed": true
+            },
+            {
+              "name": "openings[1]:keys",
+              "passed": true
+            },
+            {
+              "name": "openings[1].sill",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].offset",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].wall",
+              "passed": true
+            },
+            {
+              "name": "openings[1].kind",
+              "passed": true
+            },
+            {
+              "name": "openings[1].height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].id",
+              "passed": true
+            }
           ]
         }
       },
       "dxf": {
         "output": "models/before.dxf",
-        "sha256": "bf874f9abee6dc068b29e66b189f79af0ae33d35bd0f6c3d9950cee967fcca19",
+        "sha256": "f9d5b25a5050c6061125f3c09751c51c87c6e81025317961c2f300681d0fdff3",
         "verification": {
           "passed": true,
           "verified": true,
+          "model_verified": true,
+          "source_verified": true,
+          "verification_scope": "source_and_model_against_spec",
           "model_path": "models/before.dxf",
           "source_units": "mm",
           "drawing_unit_to_m": 0.001,
@@ -620,12 +931,163 @@
           "components": {
             "count": 11,
             "each_component_watertight": true,
+            "each_component_outward_normals": true,
+            "each_component_positive_volume": true,
             "assembly_boolean_union": false
           },
           "limitations": [
             "Verification supports named, closed, axis-aligned rectangular components.",
             "Components are separate solids; no fused watertight assembly is claimed.",
             "OBJ has no standardized unit field; its API coordinate contract is metres."
+          ],
+          "source": {
+            "path": "fixtures/controlled-complete-room.dwg",
+            "sha256": "d1ac64e11382f6345757fb21f4263877b70a2bcf4ff0dca2e554e33da63f5b1f",
+            "format": "dwg"
+          },
+          "source_checks": [
+            {
+              "name": "units",
+              "passed": true
+            },
+            {
+              "name": "drawing_unit_to_m",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin:count",
+              "passed": true
+            },
+            {
+              "name": "origin[0]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin[1]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin[2]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions:keys",
+              "passed": true
+            },
+            {
+              "name": "dimensions.width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions.length",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions.height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction:keys",
+              "passed": true
+            },
+            {
+              "name": "construction.wall_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction.floor_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction.ceiling_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings:count",
+              "passed": true
+            },
+            {
+              "name": "openings[0]:keys",
+              "passed": true
+            },
+            {
+              "name": "openings[0].width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].offset",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].wall",
+              "passed": true
+            },
+            {
+              "name": "openings[0].kind",
+              "passed": true
+            },
+            {
+              "name": "openings[0].height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].sill",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].id",
+              "passed": true
+            },
+            {
+              "name": "openings[1]:keys",
+              "passed": true
+            },
+            {
+              "name": "openings[1].width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].offset",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].wall",
+              "passed": true
+            },
+            {
+              "name": "openings[1].kind",
+              "passed": true
+            },
+            {
+              "name": "openings[1].height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].sill",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].id",
+              "passed": true
+            }
           ]
         }
       }
@@ -660,10 +1122,13 @@
     "models": {
       "glb": {
         "output": "models/after.glb",
-        "sha256": "63371d7811d4cfb50edc925b5f4bf6d2e99f543d9b93fcf8646915604cd25c07",
+        "sha256": "ee92c247aa42c809f0a0999508231878cee2a9d3f1bd9cdccd6baa535f098caf",
         "verification": {
           "passed": true,
           "verified": true,
+          "model_verified": true,
+          "source_verified": true,
+          "verification_scope": "source_and_model_against_spec",
           "model_path": "models/after.glb",
           "source_units": "mm",
           "drawing_unit_to_m": 0.001,
@@ -841,12 +1306,163 @@
           "components": {
             "count": 11,
             "each_component_watertight": true,
+            "each_component_outward_normals": true,
+            "each_component_positive_volume": true,
             "assembly_boolean_union": false
           },
           "limitations": [
             "Verification supports named, closed, axis-aligned rectangular components.",
             "Components are separate solids; no fused watertight assembly is claimed.",
             "OBJ has no standardized unit field; its API coordinate contract is metres."
+          ],
+          "source": {
+            "path": "revised-complete-room.dxf",
+            "sha256": "a401f418ef752a1a3b0cb70481f4c62ff1c4036166f6886de8965ba22d31c357",
+            "format": "dxf"
+          },
+          "source_checks": [
+            {
+              "name": "units",
+              "passed": true
+            },
+            {
+              "name": "drawing_unit_to_m",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin:count",
+              "passed": true
+            },
+            {
+              "name": "origin[0]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin[1]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin[2]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions:keys",
+              "passed": true
+            },
+            {
+              "name": "dimensions.length",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions.height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions.width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction:keys",
+              "passed": true
+            },
+            {
+              "name": "construction.wall_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction.ceiling_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction.floor_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings:count",
+              "passed": true
+            },
+            {
+              "name": "openings[0]:keys",
+              "passed": true
+            },
+            {
+              "name": "openings[0].id",
+              "passed": true
+            },
+            {
+              "name": "openings[0].offset",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].sill",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].kind",
+              "passed": true
+            },
+            {
+              "name": "openings[0].wall",
+              "passed": true
+            },
+            {
+              "name": "openings[0].width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1]:keys",
+              "passed": true
+            },
+            {
+              "name": "openings[1].id",
+              "passed": true
+            },
+            {
+              "name": "openings[1].offset",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].sill",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].kind",
+              "passed": true
+            },
+            {
+              "name": "openings[1].wall",
+              "passed": true
+            },
+            {
+              "name": "openings[1].width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            }
           ]
         }
       },
@@ -856,6 +1472,9 @@
         "verification": {
           "passed": true,
           "verified": true,
+          "model_verified": true,
+          "source_verified": true,
+          "verification_scope": "source_and_model_against_spec",
           "model_path": "models/after.obj",
           "source_units": "mm",
           "drawing_unit_to_m": 0.001,
@@ -1033,21 +1652,175 @@
           "components": {
             "count": 11,
             "each_component_watertight": true,
+            "each_component_outward_normals": true,
+            "each_component_positive_volume": true,
             "assembly_boolean_union": false
           },
           "limitations": [
             "Verification supports named, closed, axis-aligned rectangular components.",
             "Components are separate solids; no fused watertight assembly is claimed.",
             "OBJ has no standardized unit field; its API coordinate contract is metres."
+          ],
+          "source": {
+            "path": "revised-complete-room.dxf",
+            "sha256": "a401f418ef752a1a3b0cb70481f4c62ff1c4036166f6886de8965ba22d31c357",
+            "format": "dxf"
+          },
+          "source_checks": [
+            {
+              "name": "units",
+              "passed": true
+            },
+            {
+              "name": "drawing_unit_to_m",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin:count",
+              "passed": true
+            },
+            {
+              "name": "origin[0]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin[1]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin[2]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions:keys",
+              "passed": true
+            },
+            {
+              "name": "dimensions.width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions.length",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions.height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction:keys",
+              "passed": true
+            },
+            {
+              "name": "construction.wall_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction.ceiling_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction.floor_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings:count",
+              "passed": true
+            },
+            {
+              "name": "openings[0]:keys",
+              "passed": true
+            },
+            {
+              "name": "openings[0].wall",
+              "passed": true
+            },
+            {
+              "name": "openings[0].id",
+              "passed": true
+            },
+            {
+              "name": "openings[0].kind",
+              "passed": true
+            },
+            {
+              "name": "openings[0].height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].sill",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].offset",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1]:keys",
+              "passed": true
+            },
+            {
+              "name": "openings[1].wall",
+              "passed": true
+            },
+            {
+              "name": "openings[1].id",
+              "passed": true
+            },
+            {
+              "name": "openings[1].kind",
+              "passed": true
+            },
+            {
+              "name": "openings[1].height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].sill",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].offset",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            }
           ]
         }
       },
       "dxf": {
         "output": "models/after.dxf",
-        "sha256": "b8b6c4c79ade15bad88dba68ef7f8075fa32036ff4635180f489cb0b9f306de0",
+        "sha256": "3e22502eeae49600d6080938bfcaf3164351f5d516b524a866f11ec7a56d0392",
         "verification": {
           "passed": true,
           "verified": true,
+          "model_verified": true,
+          "source_verified": true,
+          "verification_scope": "source_and_model_against_spec",
           "model_path": "models/after.dxf",
           "source_units": "mm",
           "drawing_unit_to_m": 0.001,
@@ -1225,12 +1998,163 @@
           "components": {
             "count": 11,
             "each_component_watertight": true,
+            "each_component_outward_normals": true,
+            "each_component_positive_volume": true,
             "assembly_boolean_union": false
           },
           "limitations": [
             "Verification supports named, closed, axis-aligned rectangular components.",
             "Components are separate solids; no fused watertight assembly is claimed.",
             "OBJ has no standardized unit field; its API coordinate contract is metres."
+          ],
+          "source": {
+            "path": "revised-complete-room.dxf",
+            "sha256": "a401f418ef752a1a3b0cb70481f4c62ff1c4036166f6886de8965ba22d31c357",
+            "format": "dxf"
+          },
+          "source_checks": [
+            {
+              "name": "units",
+              "passed": true
+            },
+            {
+              "name": "drawing_unit_to_m",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin:count",
+              "passed": true
+            },
+            {
+              "name": "origin[0]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin[1]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "origin[2]",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions:keys",
+              "passed": true
+            },
+            {
+              "name": "dimensions.length",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions.width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "dimensions.height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction:keys",
+              "passed": true
+            },
+            {
+              "name": "construction.floor_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction.ceiling_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "construction.wall_thickness",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings:count",
+              "passed": true
+            },
+            {
+              "name": "openings[0]:keys",
+              "passed": true
+            },
+            {
+              "name": "openings[0].height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].offset",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].id",
+              "passed": true
+            },
+            {
+              "name": "openings[0].wall",
+              "passed": true
+            },
+            {
+              "name": "openings[0].width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].sill",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[0].kind",
+              "passed": true
+            },
+            {
+              "name": "openings[1]:keys",
+              "passed": true
+            },
+            {
+              "name": "openings[1].height",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].offset",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].id",
+              "passed": true
+            },
+            {
+              "name": "openings[1].wall",
+              "passed": true
+            },
+            {
+              "name": "openings[1].width",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].sill",
+              "passed": true,
+              "absolute_error_mm": 0.0
+            },
+            {
+              "name": "openings[1].kind",
+              "passed": true
+            }
           ]
         }
       }
@@ -1242,6 +2166,7 @@
     "geometry_text_cross_validation": true,
     "all_serialized_models_verified": true,
     "atomic_rollback": true,
+    "all_models_verified_against_current_source": true,
     "dry_run_no_output": true,
     "explicit_no_overwrite": true,
     "missing_height_rejected": true,

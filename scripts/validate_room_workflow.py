@@ -47,7 +47,10 @@ class EvidenceCLI:
             self.environment["TCAD_DWG2DXF"] = str(Path(converter).resolve())
 
     def call(self, name, *arguments, error=None):
-        command = [sys.executable, "-m", "agentcad", *map(str, arguments)]
+        # Acceptance saves complete evidence to disk. Agent-facing defaults stay
+        # compact; this reproducibility harness explicitly opts into more bytes.
+        command = [sys.executable, "-m", "agentcad", *map(str, arguments),
+                   "--detail", "full", "--max-output-bytes", "1048576"]
         completed = subprocess.run(
             command, cwd=PROJECT, env=self.environment, capture_output=True, text=True,
             encoding="utf-8", timeout=120, stdin=subprocess.DEVNULL, check=False,
@@ -145,7 +148,7 @@ def measured_footprint(cli, name, drawing, oracle, entities):
             "supporting_line_measurements_mm": line_dimensions}
 
 
-def build_and_verify_models(cli, name, spec_file, models):
+def build_and_verify_models(cli, name, spec_file, models, source_drawing, mapping):
     models.mkdir(parents=True, exist_ok=True)
     result = {}
     for extension in ("glb", "obj", "dxf"):
@@ -153,8 +156,10 @@ def build_and_verify_models(cli, name, spec_file, models):
         cli.call(f"{name}-model-{extension}", "room-model", "--spec", spec_file,
                  "--output", target)
         verification = cli.call(f"{name}-verify-{extension}", "room-verify", "--spec",
-                                spec_file, "--model", target, "--tolerance-mm", "0.01")
+                                spec_file, "--model", target, "--tolerance-mm", "0.01",
+                                "--source", source_drawing, "--mapping", mapping)
         assert verification["passed"] and verification["verified"], verification
+        assert verification["source_verified"] and verification["model_verified"]
         for axis in ("length", "width", "height"):
             assert verification["dimensions"][axis]["absolute_error_mm"] <= 0.01
         result[extension] = {"output": str(target.resolve()), "sha256": sha256(target),
@@ -222,7 +227,7 @@ def run_workflow(output, dwg=None, converter=None):
         for key in ("id", "kind", "wall", "offset", "width", "height", "sill"):
             assert left[key] == right[key]
     before_models = build_and_verify_models(cli, "before", output / "before-dwg.room.json",
-                                            output / "models")
+                                            output / "models", dwg, mapping)
 
     # Revise a DWG through public CLI import/apply, publishing a new DXF atomically.
     entities = cli.query_all("revision-source", dwg)
@@ -258,7 +263,7 @@ def run_workflow(output, dwg=None, converter=None):
     after_measure = measured_footprint(cli, "after", revised, revised_oracle, after_entities)
     cli.call("after-info", "info", revised)
     cli.call("after-render", "render", revised, "--output", previews / "after.svg")
-    after_models = build_and_verify_models(cli, "after", after_spec_file, output / "models")
+    after_models = build_and_verify_models(cli, "after", after_spec_file, output / "models", revised, mapping)
 
     # Negative evidence: a late invalid handle must roll back an earlier valid op.
     rollback_plan = plans / "rollback-invalid-handle.json"
@@ -303,6 +308,7 @@ def run_workflow(output, dwg=None, converter=None):
         "dwg_vs_dxf_semantics_match": True,
         "checks": {"exact_area_perimeter": True, "geometry_text_cross_validation": True,
                    "all_serialized_models_verified": True, "atomic_rollback": True,
+                    "all_models_verified_against_current_source": True,
                    "dry_run_no_output": True, "explicit_no_overwrite": True,
                    "missing_height_rejected": True, "misleading_text_rejected": True},
         "height_basis": oracle["height_evidence"],

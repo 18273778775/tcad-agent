@@ -115,7 +115,9 @@
         "type": "TEXT",
         "layer": "DRAWING_UNITS",
         "color": 256,
+        "text_length": 9,
         "text": "UNITS: mm",
+        "plain_text": "UNITS: mm",
         "insert": [
           0.0,
           5600.0,
@@ -128,21 +130,7 @@
           0.0,
           0.0,
           1.0
-        ],
-        "plain_text": "UNITS: mm",
-        "bounds": {
-          "min": [
-            0.0,
-            5550.027285129604,
-            0.0
-          ],
-          "max": [
-            1313.0422919508867,
-            5780.0,
-            0.0
-          ]
-        },
-        "bounds_kind": "approximate"
+        ]
       },
       "measurement": {
         "handle": "E7",
@@ -165,6 +153,16 @@
         "type": "LWPOLYLINE",
         "layer": "ROOM_CLEAR",
         "color": 256,
+        "point_count": 4,
+        "closed": true,
+        "coordinate_system": "OCS",
+        "point_format": "x,y,start_width,end_width,bulge",
+        "elevation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
         "points": [
           [
             0.0,
@@ -195,28 +193,13 @@
             0.0
           ]
         ],
-        "point_format": "x,y,start_width,end_width,bulge",
-        "closed": true,
-        "elevation": 0.0,
-        "extrusion": [
-          0.0,
-          0.0,
-          1.0
-        ],
-        "coordinate_system": "OCS",
-        "bounds": {
-          "min": [
-            0.0,
-            0.0,
-            0.0
-          ],
-          "max": [
-            6000.0,
-            4500.0,
-            0.0
-          ]
-        },
-        "bounds_kind": "approximate"
+        "geometry_page": {
+          "offset": 0,
+          "returned": 4,
+          "total": 4,
+          "has_more": false,
+          "next_offset": null
+        }
       },
       "measurement": {
         "handle": "8B",
@@ -255,20 +238,7 @@
           3000.0,
           0.0
         ],
-        "coordinate_system": "WCS",
-        "bounds": {
-          "min": [
-            9500.0,
-            0.0,
-            0.0
-          ],
-          "max": [
-            9500.0,
-            3000.0,
-            0.0
-          ]
-        },
-        "bounds_kind": "approximate"
+        "coordinate_system": "WCS"
       },
       "measurement": {
         "handle": "8D",
@@ -302,20 +272,7 @@
           2250.0,
           0.0
         ],
-        "coordinate_system": "WCS",
-        "bounds": {
-          "min": [
-            -200.0,
-            2250.0,
-            0.0
-          ],
-          "max": [
-            0.0,
-            2250.0,
-            0.0
-          ]
-        },
-        "bounds_kind": "approximate"
+        "coordinate_system": "WCS"
       },
       "measurement": {
         "handle": "8F",
@@ -349,20 +306,7 @@
           0.0,
           0.0
         ],
-        "coordinate_system": "WCS",
-        "bounds": {
-          "min": [
-            9400.0,
-            -150.0,
-            0.0
-          ],
-          "max": [
-            9400.0,
-            0.0,
-            0.0
-          ]
-        },
-        "bounds_kind": "approximate"
+        "coordinate_system": "WCS"
       },
       "measurement": {
         "handle": "91",
@@ -396,20 +340,7 @@
           3150.0,
           0.0
         ],
-        "coordinate_system": "WCS",
-        "bounds": {
-          "min": [
-            9400.0,
-            3000.0,
-            0.0
-          ],
-          "max": [
-            9400.0,
-            3150.0,
-            0.0
-          ]
-        },
-        "bounds_kind": "approximate"
+        "coordinate_system": "WCS"
       },
       "measurement": {
         "handle": "93",
@@ -443,20 +374,7 @@
           0.0,
           0.0
         ],
-        "coordinate_system": "WCS",
-        "bounds": {
-          "min": [
-            1000.0,
-            0.0,
-            0.0
-          ],
-          "max": [
-            1900.0,
-            0.0,
-            0.0
-          ]
-        },
-        "bounds_kind": "approximate"
+        "coordinate_system": "WCS"
       },
       "measurement": {
         "handle": "95",
@@ -480,6 +398,16 @@
         "type": "LWPOLYLINE",
         "layer": "DOOR_ELEV",
         "color": 256,
+        "point_count": 4,
+        "closed": true,
+        "coordinate_system": "OCS",
+        "point_format": "x,y,start_width,end_width,bulge",
+        "elevation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
         "points": [
           [
             11000.0,
@@ -510,28 +438,13 @@
             0.0
           ]
         ],
-        "point_format": "x,y,start_width,end_width,bulge",
-        "closed": true,
-        "elevation": 0.0,
-        "extrusion": [
-          0.0,
-          0.0,
-          1.0
-        ],
-        "coordinate_system": "OCS",
-        "bounds": {
-          "min": [
-            11000.0,
-            0.0,
-            0.0
-          ],
-          "max": [
-            11900.0,
-            2100.0,
-            0.0
-          ]
-        },
-        "bounds_kind": "approximate"
+        "geometry_page": {
+          "offset": 0,
+          "returned": 4,
+          "total": 4,
+          "has_more": false,
+          "next_offset": null
+        }
       },
       "measurement": {
         "handle": "99",
@@ -570,20 +483,7 @@
           4500.0,
           0.0
         ],
-        "coordinate_system": "WCS",
-        "bounds": {
-          "min": [
-            2200.0,
-            4500.0,
-            0.0
-          ],
-          "max": [
-            3800.0,
-            4500.0,
-            0.0
-          ]
-        },
-        "bounds_kind": "approximate"
+        "coordinate_system": "WCS"
       },
       "measurement": {
         "handle": "97",
@@ -607,6 +507,16 @@
         "type": "LWPOLYLINE",
         "layer": "WINDOW_ELEV",
         "color": 256,
+        "point_count": 4,
+        "closed": true,
+        "coordinate_system": "OCS",
+        "point_format": "x,y,start_width,end_width,bulge",
+        "elevation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
         "points": [
           [
             22200.0,
@@ -637,28 +547,13 @@
             0.0
           ]
         ],
-        "point_format": "x,y,start_width,end_width,bulge",
-        "closed": true,
-        "elevation": 0.0,
-        "extrusion": [
-          0.0,
-          0.0,
-          1.0
-        ],
-        "coordinate_system": "OCS",
-        "bounds": {
-          "min": [
-            22200.0,
-            900.0,
-            0.0
-          ],
-          "max": [
-            23800.0,
-            2100.0,
-            0.0
-          ]
-        },
-        "bounds_kind": "approximate"
+        "geometry_page": {
+          "offset": 0,
+          "returned": 4,
+          "total": 4,
+          "has_more": false,
+          "next_offset": null
+        }
       },
       "measurement": {
         "handle": "9B",
@@ -687,7 +582,9 @@
         "type": "TEXT",
         "layer": "DIM_LENGTH",
         "color": 256,
+        "text_length": 7,
         "text": "6000 mm",
+        "plain_text": "6000 mm",
         "insert": [
           2600.0,
           -900.0,
@@ -700,21 +597,7 @@
           0.0,
           0.0,
           1.0
-        ],
-        "plain_text": "6000 mm",
-        "bounds": {
-          "min": [
-            2600.0,
-            -947.1964529331515,
-            0.0
-          ],
-          "max": [
-            3589.9658935879947,
-            -730.0,
-            0.0
-          ]
-        },
-        "bounds_kind": "approximate"
+        ]
       },
       "measurement": {
         "handle": "C3",
@@ -737,7 +620,9 @@
         "type": "TEXT",
         "layer": "DIM_WIDTH",
         "color": 256,
+        "text_length": 7,
         "text": "4500 mm",
+        "plain_text": "4500 mm",
         "insert": [
           -1050.0,
           1850.0,
@@ -750,21 +635,7 @@
           0.0,
           0.0,
           1.0
-        ],
-        "plain_text": "4500 mm",
-        "bounds": {
-          "min": [
-            -1220.0,
-            1850.0,
-            0.0
-          ],
-          "max": [
-            -1002.8035470668484,
-            2839.9658935879947,
-            0.0
-          ]
-        },
-        "bounds_kind": "approximate"
+        ]
       },
       "measurement": {
         "handle": "CA",
@@ -787,7 +658,9 @@
         "type": "TEXT",
         "layer": "DIM_HEIGHT",
         "color": 256,
+        "text_length": 7,
         "text": "3000 mm",
+        "plain_text": "3000 mm",
         "insert": [
           9250.0,
           1100.0,
@@ -800,21 +673,7 @@
           0.0,
           0.0,
           1.0
-        ],
-        "plain_text": "3000 mm",
-        "bounds": {
-          "min": [
-            9080.0,
-            1100.0,
-            0.0
-          ],
-          "max": [
-            9297.19645293315,
-            2089.9658935879947,
-            0.0
-          ]
-        },
-        "bounds_kind": "approximate"
+        ]
       },
       "measurement": {
         "handle": "E3",
@@ -830,9 +689,9 @@
   },
   "source": {
     "path": "fixtures/controlled-complete-room.dxf",
-    "sha256": "65773c19dde9ce4ee5b00afbd079683708a697845bc4703030428b2cb47d302d",
+    "sha256": "570aa9ad74b243090afa8af99340b15ea0f3b3900f1935f35c9c84b8090ae48d",
     "format": "dxf",
-    "normalized_dxf_sha256": "65773c19dde9ce4ee5b00afbd079683708a697845bc4703030428b2cb47d302d"
+    "normalized_dxf_sha256": "570aa9ad74b243090afa8af99340b15ea0f3b3900f1935f35c9c84b8090ae48d"
   },
   "checks": [
     {

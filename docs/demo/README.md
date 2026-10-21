@@ -39,7 +39,7 @@ single Boolean union.
 This is a sanitized public copy of a saved acceptance run. JSON keys and string
 values, including converter diagnostics, use paths relative to this directory.
 `<workspace>`, `<python>`, `<libredwg>`, `<temporary-file>`, and
-`<temporary-dwg>` replace local execution-environment paths. Command arguments
+`<temporary-dwg>`, and `<cad-cache-file>` replace local execution-environment paths. Command arguments
 are historical records; substitute installed tools and a writable output
 directory before replaying them. Numeric results, entity handles, status/error
 codes, and all recorded original SHA-256 identities are retained.
@@ -63,7 +63,7 @@ the records where originally present. SVGs contain exported glyph outlines.
 Regenerate from an existing private acceptance directory, at repository root:
 
 ```powershell
-.venv\Scripts\python.exe scripts/prepare_public_demo.py --input artifacts/room-validation/acceptance-003 --output docs/demo
+.venv\Scripts\python.exe scripts/prepare_public_demo.py --input artifacts/room-validation/acceptance-004 --output docs/demo
 ```
 
 The output must be empty unless `--overwrite` is supplied. Existing unrecognized

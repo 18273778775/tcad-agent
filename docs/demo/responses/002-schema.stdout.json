@@ -15,74 +15,58 @@
                 "string",
                 "integer",
                 "null"
-              ]
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
             "command": {
               "const": "capabilities"
             },
             "args": {
               "type": "object",
-              "properties": {},
-              "required": [],
-              "additionalProperties": false
-            }
-          },
-          "required": [
-            "command",
-            "args"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": [
-                "string",
-                "integer",
-                "null"
-              ]
-            },
-            "command": {
-              "const": "doctor"
-            },
-            "args": {
-              "type": "object",
-              "properties": {},
-              "required": [],
-              "additionalProperties": false
-            }
-          },
-          "required": [
-            "command",
-            "args"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": [
-                "string",
-                "integer",
-                "null"
-              ]
-            },
-            "command": {
-              "const": "schema"
-            },
-            "args": {
-              "type": "object",
               "properties": {
-                "target": {
+                "detail": {
                   "enum": [
-                    "all",
-                    "request",
-                    "plan",
-                    "room-map",
-                    "room-spec"
-                  ]
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
                 }
               },
               "required": [],
@@ -103,7 +87,163 @@
                 "string",
                 "integer",
                 "null"
-              ]
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "command": {
+              "const": "doctor"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "command": {
+              "const": "schema"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "target": {
+                  "enum": [
+                    "all",
+                    "request",
+                    "plan",
+                    "room-map",
+                    "room-spec"
+                  ]
+                },
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
             "command": {
               "const": "info"
@@ -119,6 +259,51 @@
                   "type": "string",
                   "minLength": 1,
                   "default": "Model"
+                },
+                "include_bounds": {
+                  "type": "boolean"
+                },
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
                 }
               },
               "required": [
@@ -141,7 +326,10 @@
                 "string",
                 "integer",
                 "null"
-              ]
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
             "command": {
               "const": "query"
@@ -197,6 +385,61 @@
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 10000
+                },
+                "cursor": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "vertex_offset": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "vertex_limit": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10000
+                },
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
                 }
               },
               "required": [
@@ -219,7 +462,10 @@
                 "string",
                 "integer",
                 "null"
-              ]
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
             "command": {
               "const": "measure"
@@ -244,6 +490,48 @@
                   },
                   "minItems": 1,
                   "maxItems": 10000
+                },
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
                 }
               },
               "required": [
@@ -267,7 +555,131 @@
                 "string",
                 "integer",
                 "null"
-              ]
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "command": {
+              "const": "export"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "input": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "layout": {
+                  "type": "string",
+                  "minLength": 1,
+                  "default": "Model"
+                },
+                "output": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite": {
+                  "type": "boolean"
+                },
+                "types": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "layer": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "handles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 1,
+                  "maxItems": 10000
+                },
+                "max_entities": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000000
+                },
+                "max_bytes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1073741824
+                },
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
+                }
+              },
+              "required": [
+                "input",
+                "output"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
             "command": {
               "const": "new"
@@ -294,6 +706,48 @@
                 },
                 "dry_run": {
                   "type": "boolean"
+                },
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
                 }
               },
               "required": [
@@ -316,7 +770,10 @@
                 "string",
                 "integer",
                 "null"
-              ]
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
             "command": {
               "const": "apply"
@@ -340,6 +797,56 @@
                 },
                 "dry_run": {
                   "type": "boolean"
+                },
+                "expected_source_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-fA-F0-9]{64}$"
+                },
+                "expected_output_sha256": {
+                  "type": "string",
+                  "pattern": "^([a-fA-F0-9]{64}|missing)$"
+                },
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
                 }
               },
               "required": [
@@ -363,7 +870,10 @@
                 "string",
                 "integer",
                 "null"
-              ]
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
             "command": {
               "const": "render"
@@ -386,6 +896,78 @@
                 },
                 "overwrite": {
                   "type": "boolean"
+                },
+                "types": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "layer": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "handles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 1,
+                  "maxItems": 10000
+                },
+                "max_entities": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100000
+                },
+                "max_svg_bytes": {
+                  "type": "integer",
+                  "minimum": 1024,
+                  "maximum": 67108864
+                },
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
                 }
               },
               "required": [
@@ -409,7 +991,10 @@
                 "string",
                 "integer",
                 "null"
-              ]
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
             "command": {
               "const": "convert"
@@ -441,6 +1026,48 @@
                   "type": "number",
                   "exclusiveMinimum": 0,
                   "maximum": 600
+                },
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
                 }
               },
               "required": [
@@ -464,7 +1091,10 @@
                 "string",
                 "integer",
                 "null"
-              ]
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
             "command": {
               "const": "room-extract"
@@ -485,6 +1115,48 @@
                 },
                 "overwrite": {
                   "type": "boolean"
+                },
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
                 }
               },
               "required": [
@@ -508,7 +1180,10 @@
                 "string",
                 "integer",
                 "null"
-              ]
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
             "command": {
               "const": "room-model"
@@ -525,6 +1200,48 @@
                 },
                 "overwrite": {
                   "type": "boolean"
+                },
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
                 }
               },
               "required": [
@@ -548,7 +1265,10 @@
                 "string",
                 "integer",
                 "null"
-              ]
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
             "command": {
               "const": "room-verify"
@@ -567,12 +1287,137 @@
                   "type": "number",
                   "exclusiveMinimum": 0,
                   "maximum": 1
+                },
+                "source": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "mapping": {
+                  "type": "object"
+                },
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
                 }
               },
               "required": [
                 "spec",
                 "model"
               ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "command",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ],
+              "maxLength": 256,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "command": {
+              "const": "setup-dwg"
+            },
+            "args": {
+              "type": "object",
+              "properties": {
+                "data_dir": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "detail": {
+                  "enum": [
+                    "summary",
+                    "full"
+                  ],
+                  "default": "summary"
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 64
+                },
+                "no_provenance": {
+                  "type": "boolean"
+                },
+                "max_output_bytes": {
+                  "type": "integer",
+                  "minimum": 4096,
+                  "maximum": 1048576
+                },
+                "result_file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "overwrite_result_file": {
+                  "type": "boolean"
+                },
+                "timeout_seconds": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 600
+                },
+                "max_memory_mb": {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 16384
+                }
+              },
+              "required": [],
               "additionalProperties": false
             }
           },
@@ -1657,5 +2502,11 @@
       ],
       "additionalProperties": false
     }
+  },
+  "resources": {
+    "elapsed_seconds": 2.063,
+    "peak_rss_bytes": 74006528,
+    "timeout_seconds": 60.0,
+    "max_memory_mb": 1024
   }
 }

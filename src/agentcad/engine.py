@@ -11,6 +11,7 @@ changing INSUNITS changes metadata and does not rescale existing geometry.
 from __future__ import annotations
 
 from collections import Counter
+from itertools import islice
 import math
 from pathlib import Path
 
@@ -19,8 +20,9 @@ from ezdxf import bbox as ezbbox
 from ezdxf.math import Matrix44, Vec3, arc_angle_span_deg
 
 from .errors import CadError
-from .io import jsonable, read_document, save_document, validate_finite_entity
+from .io import jsonable, read_document, revision_guard, save_document, validate_finite_entity
 from .schema import validate_plan
+from .query import (query_entities as query_entities, _QUERY_FIELDS, _validate_handles)
 
 
 _UNIT_CODES = {"unitless": 0, "in": 1, "ft": 2, "mm": 4, "cm": 5, "m": 6}
@@ -63,14 +65,19 @@ def _bounds(entity):
 
 
 def _drawing_bounds(entities):
-    bounds = [_bounds(entity) for entity in entities]
-    present = [item for item in bounds if item is not None]
-    if not present:
-        return None, len(bounds)
-    return {
-        "min": [min(item["min"][axis] for item in present) for axis in range(3)],
-        "max": [max(item["max"][axis] for item in present) for axis in range(3)],
-    }, len(bounds) - len(present)
+    result = None
+    missing = 0
+    for entity in entities:
+        extent = _bounds(entity)
+        if extent is None:
+            missing += 1
+        elif result is None:
+            result = extent
+        else:
+            for axis in range(3):
+                result["min"][axis] = min(result["min"][axis], extent["min"][axis])
+                result["max"][axis] = max(result["max"][axis], extent["max"][axis])
+    return result, missing
 
 
 def _base_record(entity):
@@ -82,87 +89,130 @@ def _base_record(entity):
     }
 
 
-def _record(entity):
-    record = _base_record(entity)
+# Field projection is evaluated before walking vertices, text formatting, or bounds.
+_SUMMARY_FIELDS = {
+    "handle", "type", "layer", "color", "start", "end", "center", "radius", "insert",
+    "closed", "point_count", "text_length", "name", "coordinate_system",
+}
+
+
+def _record(entity, fields=None, detail="full", vertex_offset=0, vertex_limit=None):
+    wanted = set(fields) if fields is not None else (
+        _SUMMARY_FIELDS if detail == "summary" else _QUERY_FIELDS
+    )
+    record = {}
+
+    def put(name, value):
+        if name in wanted:
+            record[name] = value() if callable(value) else value
+
+    for name, value in _base_record(entity).items():
+        put(name, value)
     kind = entity.dxftype()
     if kind == "LINE":
-        record.update(
-            start=_point(entity.dxf.start), end=_point(entity.dxf.end), coordinate_system="WCS"
-        )
+        put("start", lambda: _point(entity.dxf.start))
+        put("end", lambda: _point(entity.dxf.end))
+        put("coordinate_system", "WCS")
     elif kind == "3DFACE":
-        record.update(
-            vertices=[_point(entity.dxf.get(f"vtx{index}")) for index in range(4)],
-            coordinate_system="WCS",
-            invisible_edges=int(entity.dxf.get("invisible_edges", 0)),
-        )
+        put("vertices", lambda: [_point(entity.dxf.get(f"vtx{i}")) for i in range(4)])
+        put("coordinate_system", "WCS")
+        put("invisible_edges", lambda: int(entity.dxf.get("invisible_edges", 0)))
     elif kind in {"CIRCLE", "ARC"}:
-        record.update(
-            center=_point(entity.dxf.center),
-            radius=float(entity.dxf.radius),
-            extrusion=_point(entity.dxf.extrusion),
-            coordinate_system="OCS",
-        )
+        put("center", lambda: _point(entity.dxf.center))
+        put("radius", lambda: float(entity.dxf.radius))
+        put("extrusion", lambda: _point(entity.dxf.extrusion))
+        put("coordinate_system", "OCS")
         if kind == "ARC":
-            record.update(
-                start_angle=float(entity.dxf.start_angle), end_angle=float(entity.dxf.end_angle)
-            )
-    elif kind == "LWPOLYLINE":
-        record.update(
-            points=[list(p) for p in entity.get_points("xyseb")],
-            point_format="x,y,start_width,end_width,bulge",
-            closed=bool(entity.closed),
-            elevation=float(entity.dxf.elevation),
-            extrusion=_point(entity.dxf.extrusion),
-            coordinate_system="OCS",
-        )
-    elif kind == "POLYLINE":
-        record.update(
-            points=[_point(v.dxf.location) for v in entity.vertices],
-            bulges=[float(v.dxf.bulge) for v in entity.vertices],
-            closed=bool(entity.is_closed),
-            is_2d=bool(entity.is_2d_polyline),
-            is_3d=bool(entity.is_3d_polyline),
-            coordinate_system="OCS" if entity.is_2d_polyline else "WCS",
-        )
-        if entity.is_2d_polyline:
-            record.update(
-                elevation=_point(entity.dxf.elevation), extrusion=_point(entity.dxf.extrusion)
-            )
-    elif kind in {"TEXT", "MTEXT"}:
-        record.update(
-            text=entity.dxf.text if kind == "TEXT" else entity.text,
-            insert=_point(entity.dxf.insert),
-            coordinate_system="OCS" if kind == "TEXT" else "WCS",
-        )
-        if kind == "TEXT":
-            record.update(
-                height=float(entity.dxf.height),
-                rotation=float(entity.dxf.rotation),
-                extrusion=_point(entity.dxf.extrusion),
-            )
+            put("start_angle", lambda: float(entity.dxf.start_angle))
+            put("end_angle", lambda: float(entity.dxf.end_angle))
+    elif kind in {"LWPOLYLINE", "POLYLINE"}:
+        lw = kind == "LWPOLYLINE"
+        total = len(entity) if lw else len(entity.vertices)
+        put("point_count", total)
+        put("closed", bool(entity.closed if lw else entity.is_closed))
+        put("coordinate_system", "OCS" if lw or entity.is_2d_polyline else "WCS")
+        if lw:
+            put("point_format", "x,y,start_width,end_width,bulge")
+            put("elevation", lambda: float(entity.dxf.elevation))
+            put("extrusion", lambda: _point(entity.dxf.extrusion))
         else:
-            record.update(
-                char_height=float(entity.dxf.char_height),
-                width=float(entity.dxf.get("width", 0) or 0),
-            )
-        record["plain_text"] = entity.plain_text()
-    record["bounds"] = _bounds(entity)
-    record["bounds_kind"] = "approximate" if record["bounds"] else "unavailable"
+            put("is_2d", bool(entity.is_2d_polyline))
+            put("is_3d", bool(entity.is_3d_polyline))
+            if entity.is_2d_polyline:
+                put("elevation", lambda: _point(entity.dxf.elevation))
+                put("extrusion", lambda: _point(entity.dxf.extrusion))
+        if "points" in wanted or (not lw and "bulges" in wanted):
+            stop = None if vertex_limit is None else vertex_offset + vertex_limit
+            # get_points() eagerly duplicates the whole LWPOLYLINE. Iteration keeps
+            # a 100k-vertex entity bounded when only a vertex page was requested.
+            vertices = islice(iter(entity) if lw else iter(entity.vertices), vertex_offset, stop)
+            if lw:
+                put("points", lambda: [[float(v) for v in point] for point in vertices])
+            else:
+                chosen = list(vertices)
+                put("points", lambda: [_point(v.dxf.location) for v in chosen])
+                put("bulges", lambda: [float(v.dxf.bulge) for v in chosen])
+            if vertex_limit is not None:
+                returned = min(max(total - vertex_offset, 0), vertex_limit)
+                record["geometry_page"] = {
+                    "offset": vertex_offset, "returned": returned, "total": total,
+                    "has_more": vertex_offset + returned < total,
+                    "next_offset": vertex_offset + returned if vertex_offset + returned < total else None,
+                }
+    elif kind in {"TEXT", "MTEXT"}:
+        raw = entity.dxf.text if kind == "TEXT" else entity.text
+        put("text_length", len(raw))
+        put("text", raw)
+        put("plain_text", entity.plain_text)
+        put("insert", lambda: _point(entity.dxf.insert))
+        put("coordinate_system", "OCS" if kind == "TEXT" else "WCS")
+        if kind == "TEXT":
+            put("height", lambda: float(entity.dxf.height))
+            put("rotation", lambda: float(entity.dxf.rotation))
+            put("extrusion", lambda: _point(entity.dxf.extrusion))
+        else:
+            put("char_height", lambda: float(entity.dxf.char_height))
+            put("width", lambda: float(entity.dxf.get("width", 0) or 0))
+    elif kind == "INSERT":
+        put("name", lambda: entity.dxf.name)
+        put("insert", lambda: _point(entity.dxf.insert))
+        put("rotation", lambda: float(entity.dxf.rotation))
+        for axis in ("xscale", "yscale", "zscale"):
+            put(axis, lambda axis=axis: float(entity.dxf.get(axis, 1)))
+        put("coordinate_system", "OCS")
+    if "bounds" in wanted or "bounds_kind" in wanted:
+        extent = None if kind == "INSERT" else _bounds(entity)
+        put("bounds", extent)
+        put("bounds_kind", "approximate" if extent else "unavailable")
+    if vertex_limit is not None:
+        # Full text lives in the source. Query output always has an explicit cap.
+        for key, value in list(record.items()):
+            if isinstance(value, str) and len(value) > 1024:
+                record[key] = value[:1024]
+                record.setdefault("truncation", {})[key] = {
+                    "returned_characters": 1024, "total_characters": len(value),
+                    "complete": False,
+                }
     return jsonable(record)
 
 
-def inspect_drawing(path, layout="Model"):
+def inspect_drawing(path, layout="Model", include_bounds=True):
+    from .io import file_sha256
+    before_sha = file_sha256(path) if Path(path).is_file() else None
     doc = read_document(path)
     space = _layout(doc, layout)
-    entities = list(space)
-    bounds, missing = _drawing_bounds(entities)
-    warnings = [_BOUND_WARNING] if entities else []
+    entities = space
+    bounds, missing = _drawing_bounds(entities) if include_bounds else (None, 0)
+    warnings = [_BOUND_WARNING] if include_bounds and len(space) else []
     if missing:
         warnings.append(
             f"Bounds unavailable for {missing} entities; drawing bounds may be incomplete."
         )
+    if file_sha256(path) != before_sha:
+        raise CadError("SOURCE_CHANGED", "Source changed while drawing information was being read.")
     return {
         "path": str(Path(path).expanduser().resolve()),
+        "source_sha256": before_sha,
         "dxf_version": doc.dxfversion,
         "units": _units(doc),
         "layout": space.name,
@@ -180,124 +230,115 @@ def inspect_drawing(path, layout="Model"):
             for layer in doc.layers
         ],
         "bounds": bounds,
-        "bounds_kind": "approximate" if bounds else "unavailable",
+        "bounds_kind": ("approximate" if bounds else "unavailable") if include_bounds else "not_requested",
+        "bounds_included": bool(include_bounds),
         "warnings": warnings,
     }
 
 
-def _validate_handles(handles, allow_empty=False):
-    if (
-        not isinstance(handles, list)
-        or (not handles and not allow_empty)
-        or any(
-            not isinstance(handle, str)
-            or not handle
-            or any(c not in "0123456789abcdefABCDEF" for c in handle)
-            for handle in handles
-        )
-    ):
-        raise CadError("INVALID_ARGUMENT", "Handles must be a list of hexadecimal handle strings.")
-    normalized = [handle.upper() for handle in handles]
-    if len(set(normalized)) != len(normalized):
-        raise CadError("INVALID_ARGUMENT", "Handles must be unique ignoring case.")
-    return normalized
 
 
-def query_entities(
-    path,
-    layout="Model",
-    types=None,
-    layer=None,
-    text=None,
-    handles=None,
-    bbox=None,
-    offset=0,
-    limit=100,
+
+
+
+def export_entities(
+    path, output, layout="Model", types=None, layer=None, handles=None, fields=None,
+    max_entities=100000, max_bytes=64 * 1024 * 1024, overwrite=False,
 ):
-    if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 10000:
-        raise CadError(
-            "INVALID_ARGUMENT", "Offset must be nonnegative and limit must be between 1 and 10000."
-        )
+    """Write complete selected native entity records as bounded, atomic JSONL.
+
+    This is the complete-data file boundary. Query pagination and result-file
+    output retain their own page/detail caps. Export does not expand INSERTs,
+    resolve unsupported entity data, or accumulate all selected rows in memory.
+    """
+    import hashlib
+    import json
+    from .io import atomic_output
+
+    if (type(max_entities) is not int or not 1 <= max_entities <= 1000000
+            or type(max_bytes) is not int or not 1 <= max_bytes <= 1024 * 1024 * 1024):
+        raise CadError("INVALID_ARGUMENT", "Export limits must be 1..1000000 entities and 1..1073741824 bytes.")
+    if type(overwrite) is not bool:
+        raise CadError("INVALID_ARGUMENT", "Overwrite must be boolean.")
     if types is not None and (
-        not isinstance(types, list) or any(not isinstance(t, str) or not t for t in types)
+        not isinstance(types, list) or any(not isinstance(kind, str) or not kind for kind in types)
     ):
         raise CadError("INVALID_ARGUMENT", "Types must be a list of entity names.")
     if layer is not None and not isinstance(layer, str):
         raise CadError("INVALID_ARGUMENT", "Layer must be a string.")
-    if text is not None and not isinstance(text, str):
-        raise CadError("INVALID_ARGUMENT", "Text filter must be a string.")
-    selected_handles = (
-        None if handles is None else set(_validate_handles(handles, allow_empty=True))
-    )
-    if bbox is not None:
-        if (
-            not isinstance(bbox, (list, tuple))
-            or len(bbox) != 4
-            or any(not _finite_number(v) for v in bbox)
-            or bbox[0] > bbox[2]
-            or bbox[1] > bbox[3]
-        ):
-            raise CadError(
-                "INVALID_ARGUMENT",
-                "Bounding box must be [xmin, ymin, xmax, ymax] with finite ordered numbers.",
-            )
-    doc = read_document(path)
-    space = _layout(doc, layout)
-    selected_types = None if types is None else {t.upper() for t in types}
-    matches = []
-    unbounded = 0
-    for entity in space:
-        kind = entity.dxftype()
-        if selected_types is not None and kind not in selected_types:
-            continue
-        if layer is not None and entity.dxf.get("layer", "0") != layer:
-            continue
-        if selected_handles is not None and entity.dxf.handle.upper() not in selected_handles:
-            continue
-        if text is not None:
-            if kind not in {"TEXT", "MTEXT"} or text not in entity.plain_text():
-                continue
-        if bbox is not None:
-            extent = _bounds(entity)
-            if extent is None:
-                unbounded += 1
-                continue
-            if (
-                extent["max"][0] < bbox[0]
-                or extent["min"][0] > bbox[2]
-                or extent["max"][1] < bbox[1]
-                or extent["min"][1] > bbox[3]
-            ):
-                continue
-        matches.append(entity)
-    warnings = [_BOUND_WARNING] if matches or bbox is not None else []
-    if unbounded:
-        warnings.append(
-            f"Bounding-box filtering excluded {unbounded} entities whose extents are unavailable."
-        )
-    return {
-        "entities": [_record(e) for e in matches[offset : offset + limit]],
-        "total": len(matches),
-        "offset": offset,
-        "limit": limit,
-        "layout": space.name,
-        "units": _units(doc),
-        "warnings": warnings,
-    }
+    if fields is not None and (
+        not isinstance(fields, list) or not fields
+        or any(not isinstance(field, str) or field not in _QUERY_FIELDS for field in fields)
+    ):
+        raise CadError("INVALID_ARGUMENT", "Fields must be known entity field names.",
+                       {"available": sorted(_QUERY_FIELDS)})
+    selected_handles = None if handles is None else set(_validate_handles(handles, allow_empty=True))
+    selected_types = None if types is None else {kind.upper() for kind in types}
+    target = Path(output).expanduser().resolve()
+    if target.suffix.lower() not in {".jsonl", ".ndjson"}:
+        raise CadError("UNSUPPORTED_FORMAT", "Entity export requires .jsonl or .ndjson output.")
+    count = size = 0
+    digest = hashlib.sha256()
+    encoder = json.JSONEncoder(ensure_ascii=False, allow_nan=False, separators=(",", ":"))
+    with revision_guard(path, target):
+        # Atomic output checks no-clobber before opening/parsing the input.
+        with atomic_output(target, overwrite=overwrite) as temporary:
+            doc = read_document(path)
+            space = _layout(doc, layout)
+            with temporary.open("wb") as stream:
+                for entity in space:
+                    kind = entity.dxftype()
+                    if selected_types is not None and kind not in selected_types:
+                        continue
+                    if layer is not None and entity.dxf.get("layer", "0") != layer:
+                        continue
+                    if selected_handles is not None and entity.dxf.handle.upper() not in selected_handles:
+                        continue
+                    if count >= max_entities:
+                        raise CadError("EXPORT_ENTITY_LIMIT", "Selected entities exceed the export entity budget.",
+                                       {"max_entities": max_entities, "hint": "Narrow types/layer/handles or increase max_entities."})
+                    # A conservative lower bound prevents copying a massive
+                    # vertex array when even its shortest encoding cannot fit.
+                    needs_points = fields is None or "points" in fields
+                    if needs_points and kind in {"LWPOLYLINE", "POLYLINE"}:
+                        points = len(entity) if kind == "LWPOLYLINE" else len(entity.vertices)
+                        minimum = points * (21 if kind == "LWPOLYLINE" else 13)
+                        if minimum > max_bytes - size:
+                            raise CadError("EXPORT_BYTE_LIMIT", "A complete entity cannot fit the remaining export byte budget.",
+                                           {"max_bytes": max_bytes, "entity_handle": entity.dxf.handle,
+                                            "minimum_geometry_bytes": minimum})
+                    record = _record(entity, fields=fields, detail="full", vertex_limit=None)
+                    for chunk in encoder.iterencode(record):
+                        block = chunk.encode("utf-8")
+                        if size + len(block) + 1 > max_bytes:
+                            raise CadError("EXPORT_BYTE_LIMIT", "Complete entity data exceeds the export byte budget.",
+                                           {"max_bytes": max_bytes, "entity_handle": entity.dxf.handle,
+                                            "hint": "Narrow fields/selection or increase max_bytes."})
+                        stream.write(block)
+                        digest.update(block)
+                        size += len(block)
+                    stream.write(b"\n")
+                    digest.update(b"\n")
+                    size += 1
+                    count += 1
+                if count == 0:
+                    raise CadError("EMPTY_SELECTION", "No native entities match the export selection; no file was published.")
+    return {"output": str(target), "entity_count": count, "bytes": size,
+            "sha256": digest.hexdigest(), "format": "jsonl", "layout": layout,
+            "warnings": ["Native supported query records only; INSERTs and unsupported entity geometry are not expanded."]}
 
 
-def _finite_number(value):
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return False
-    try:
-        return math.isfinite(value)
-    except OverflowError:
-        return False
 
 
 def _selected_entities(doc, space, handles):
     handles = _validate_handles(handles)
-    available = {e.dxf.handle.upper(): e for e in space}
+    # Native handle lookup is O(selected handles), not a second full layout scan.
+    owner = space.layout_key
+    available = {}
+    for handle in handles:
+        entity = doc.entitydb.get(handle)
+        if entity is not None and entity.is_alive and entity.dxf.get("owner") == owner:
+            available[handle] = entity
     missing = [handle for handle in handles if handle not in available]
     if missing:
         raise CadError(
@@ -391,7 +432,8 @@ def _measure(entity):
             )
     elif kind == "POLYLINE" and entity.is_2d_polyline:
         points = [_point(v.dxf.location) for v in entity.vertices]
-        if any(abs(p[2]) > 1e-12 for p in points):
+        elevation = float(entity.dxf.elevation.z)
+        if any(abs(p[2]) > 1e-12 and abs(p[2] - elevation) > 1e-12 for p in points):
             result.update(
                 supported=False,
                 length=None,
@@ -507,7 +549,7 @@ def _apply_operation(doc, space, operation):
     if kind == "layer":
         created = _ensure_layer(doc, operation["name"], operation.get("color", 7))
         if "color" in operation:
-            doc.layers.get(operation["name"]).dxf.color = operation["color"]
+            doc.layers.get(operation["name"]).color = operation["color"]
         return {"op": kind, "name": operation["name"], "created": created}
     if kind == "add":
         entity = _add_entity(doc, space, operation["entity"])
@@ -563,7 +605,21 @@ def _apply_operation(doc, space, operation):
     return {"op": kind, "handles": handles}
 
 
-def apply_plan(plan, output, input_path=None, overwrite=False, dry_run=False):
+def apply_plan(
+    plan, output, input_path=None, overwrite=False, dry_run=False,
+    expected_source_sha256=None, expected_output_sha256=None,
+):
+    """Serialize the complete read/edit/publish transaction for this destination.
+
+    Expected revisions are optional compare-and-swap preconditions. Even without
+    them, cooperating in-place writers read only after taking the destination
+    lock, so a second edit starts from the first writer's published document.
+    """
+    with revision_guard(input_path, output, expected_source_sha256, expected_output_sha256):
+        return _apply_plan_unlocked(plan, output, input_path, overwrite, dry_run)
+
+
+def _apply_plan_unlocked(plan, output, input_path=None, overwrite=False, dry_run=False):
     validate_plan(plan)
     if type(overwrite) is not bool or type(dry_run) is not bool:
         raise CadError("INVALID_ARGUMENT", "Overwrite and dry_run must be booleans.")

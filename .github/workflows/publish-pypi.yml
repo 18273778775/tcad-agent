@@ -1,0 +1,47 @@
+name: Publish configured PyPI release
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Already tested release tag (for example v0.2.0)
+        required: true
+        default: v0.2.0
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: vars.TCAD_PYPI_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.12'
+      - name: Verify tag version
+        env:
+          RELEASE_REF: ${{ inputs.ref }}
+        run: python -c "import os,tomllib; v=tomllib.load(open('pyproject.toml','rb'))['project']['version']; assert os.environ['RELEASE_REF']=='v'+v"
+      - run: python -m pip install build twine
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: release-distributions
+          path: dist/*
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: release-distributions
+          path: dist
+      - name: Publish using the configured PyPI Trusted Publisher
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1

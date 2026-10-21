@@ -1,0 +1,44 @@
+name: Large drawing benchmark
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/agentcad/**'
+      - 'scripts/benchmark_large_drawing.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/benchmark.yml'
+  pull_request:
+    paths:
+      - 'src/agentcad/**'
+      - 'scripts/benchmark_large_drawing.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/benchmark.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e ".[dev]"
+      - name: 100k entities / at least 20 MiB, with enforced latency and memory gates
+        run: python scripts/benchmark_large_drawing.py --workdir artifacts/large-drawing-benchmark --output artifacts/large-drawing-benchmark/benchmark.json --entities 100000 --min-mib 20 --pages 10 --cold-max-seconds 180 --warm-max-seconds 1 --rss-max-mib 1024
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: large-drawing-results-${{ matrix.os }}
+          path: artifacts/large-drawing-benchmark/benchmark.json
+          if-no-files-found: warn

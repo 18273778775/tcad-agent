@@ -88,5 +88,18 @@
       "Lengths use drawing units; areas use squared drawing units. Entity areas are summed without Boolean union."
     ],
     "source": "fixtures/controlled-complete-room.dxf"
+  },
+  "output": {
+    "detail": "full",
+    "max_bytes": 1048576,
+    "truncated": false,
+    "omitted_sections": 0,
+    "omissions": []
+  },
+  "resources": {
+    "elapsed_seconds": 2.172,
+    "peak_rss_bytes": 74571776,
+    "timeout_seconds": 60.0,
+    "max_memory_mb": 1024
   }
 }

@@ -53,7 +53,13 @@ def test_serialized_nondefault_dimensions_and_opening_voids(tmp_path, suffix):
     if suffix == "glb":
         scene = trimesh.load_scene(output, process=False)
         assert scene.bounds[1, 0] == pytest.approx(7.530, abs=0.00001)
-        assert scene.bounds[0, 2] == pytest.approx(-0.125, abs=0.00001)
+        # Standard glTF is right-handed Y-up, independent of our verifier.
+        # Architectural floor Z becomes glTF Y; plan north becomes -Z.
+        assert scene.bounds[0, 1] == pytest.approx(-0.125, abs=0.00001)
+        assert scene.bounds[1, 1] == pytest.approx(2.985, abs=0.00001)
+        assert scene.bounds[0, 2] == pytest.approx(-4.395, abs=0.00001)
+        assert scene.bounds[1, 2] == pytest.approx(0.185, abs=0.00001)
+        assert scene.geometry["tcad_floor"].volume > 0
     if suffix == "dxf":
         doc = ezdxf.readfile(output)
         assert doc.units == 4
@@ -81,14 +87,14 @@ def test_scene_node_transform_is_measured_and_dimension_error_reported(tmp_path)
     assert not length["passed"]
 
 
-@pytest.mark.parametrize("axis,key,delta", [(1, "width", 0.04), (2, "height", 0.06)])
+@pytest.mark.parametrize("axis,key,delta", [(2, "width", -0.04), (1, "height", 0.06)])
 def test_all_clear_axes_are_independently_measured(tmp_path, axis, key, delta):
     spec, output = room(), tmp_path / "model.glb"
     build_room_model(spec, output)
     scene = trimesh.load_scene(output, process=False)
     for node in list(scene.graph.nodes_geometry):
-        if (axis == 1 and node.startswith("tcad_wall_north_")) or (
-                axis == 2 and node == "tcad_ceiling"):
+        if (key == "width" and node.startswith("tcad_wall_north_")) or (
+                key == "height" and node == "tcad_ceiling"):
             transform, geometry = scene.graph[node]
             transform = transform.copy()
             transform[axis, 3] += delta
@@ -97,7 +103,7 @@ def test_all_clear_axes_are_independently_measured(tmp_path, axis, key, delta):
     with pytest.raises(CadError) as error:
         verify_room_model(spec, output)
     assert error.value.details["dimensions"][key]["absolute_error_mm"] == pytest.approx(
-        delta * 1000, abs=0.01)
+        abs(delta) * 1000, abs=0.01)
 
 
 def test_panel_blocking_a_door_void_is_detected_without_dimension_change(tmp_path):
@@ -106,6 +112,8 @@ def test_panel_blocking_a_door_void_is_detected_without_dimension_change(tmp_pat
     scene = trimesh.load_scene(output, process=False)
     blocker = trimesh.creation.box(extents=[0.935, 0.185, 2.075])
     blocker.apply_translation([0.815 + 0.935 / 2, -0.185 / 2, 2.075 / 2])
+    blocker.vertices = np.column_stack([blocker.vertices[:, 0], blocker.vertices[:, 2],
+                                       -blocker.vertices[:, 1]])
     scene.add_geometry(blocker, node_name="tcad_wall_south_999", geom_name="tcad_wall_south_999")
     output.write_bytes(scene.export(file_type="glb"))
     with pytest.raises(CadError) as error:
@@ -194,11 +202,65 @@ def test_removed_roles_and_skewed_non_box_mesh_are_rejected(tmp_path):
         verify_room_model(spec, output)
     assert error.value.code == "MODEL_DIMENSION_MISMATCH"
     assert "rectangular solid" in error.value.details["checks"][-1]["reason"]
+    metadata = scene.metadata.copy()
     scene = trimesh.Scene(trimesh.creation.box(extents=np.ones(3)))
+    scene.metadata = metadata
     output.write_bytes(scene.export(file_type="glb"))
     with pytest.raises(CadError) as error:
         verify_room_model(spec, output)
     assert "component role" in error.value.details["checks"][-1]["reason"]
+
+
+def test_unmarked_legacy_z_up_glb_requires_explicit_regeneration(tmp_path):
+    spec, output = room(), tmp_path / "legacy.glb"
+    build_room_model(spec, output)
+    scene = trimesh.load_scene(output, process=False)
+    scene.metadata.clear()
+    output.write_bytes(scene.export(file_type="glb"))
+    with pytest.raises(CadError) as error:
+        verify_room_model(spec, output)
+    assert error.value.code == "UNSUPPORTED_MODEL_CONVENTION"
+    assert "room-model" in error.value.details["recovery"]
+
+
+def test_reflected_scene_node_with_unchanged_bounds_is_rejected(tmp_path):
+    spec, output = room(), tmp_path / "reflected.glb"
+    build_room_model(spec, output)
+    scene = trimesh.load_scene(output, process=False)
+    _, geometry = scene.graph["tcad_floor"]
+    reflected = np.eye(4)
+    reflected[0, 0], reflected[0, 3] = -1, 7.345
+    scene.graph.update(frame_to="tcad_floor", matrix=reflected, geometry=geometry)
+    output.write_bytes(scene.export(file_type="glb"))
+    with pytest.raises(CadError) as error:
+        verify_room_model(spec, output)
+    assert error.value.code == "MODEL_DIMENSION_MISMATCH"
+    assert "outward" in error.value.details["checks"][-1]["reason"]
+
+
+@pytest.mark.parametrize("suffix", ["glb", "obj", "dxf"])
+def test_inward_normals_rejected_even_with_identical_dimensions(tmp_path, suffix):
+    spec, output = room(), tmp_path / f"inside-out.{suffix}"
+    build_room_model(spec, output)
+    if suffix == "glb":
+        scene = trimesh.load_scene(output, process=False)
+        scene.geometry["tcad_floor"].invert()
+        output.write_bytes(scene.export(file_type="glb"))
+    elif suffix == "obj":
+        lines = output.read_text().splitlines()
+        output.write_text("\n".join(" ".join(["f", *line.split()[:0:-1]])
+                                    if line.startswith("f ") else line for line in lines) + "\n")
+    else:
+        doc = ezdxf.readfile(output)
+        for face in doc.modelspace():
+            if face.dxf.layer == "tcad_floor":
+                left, right = face.dxf.vtx1, face.dxf.vtx2
+                face.dxf.vtx1, face.dxf.vtx2, face.dxf.vtx3 = right, left, left
+        doc.saveas(output)
+    with pytest.raises(CadError) as error:
+        verify_room_model(spec, output)
+    assert error.value.code == "MODEL_DIMENSION_MISMATCH"
+    assert "outward" in error.value.details["checks"][-1]["reason"]
 
 
 def test_failed_serialized_verification_does_not_publish(tmp_path, monkeypatch):

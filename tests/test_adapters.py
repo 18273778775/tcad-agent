@@ -34,13 +34,17 @@ def dwg_file(tmp_path):
 
 
 @pytest.fixture
-def configured_converter(monkeypatch):
-    monkeypatch.setenv("TCAD_DWG2DXF", "C:/installed converter/dwg2dxf.exe")
+def configured_converter(monkeypatch, tmp_path):
+    executable = tmp_path / "installed converter" / "dwg2dxf.exe"
+    executable.parent.mkdir()
+    executable.write_bytes(b"Mock converter identity; never executed")
+    monkeypatch.setenv("TCAD_DWG2DXF", str(executable))
+    monkeypatch.setenv("TCAD_CACHE_DIR", str(tmp_path / "cache"))
     monkeypatch.delenv("TCAD_ODA_CONVERTER", raising=False)
     monkeypatch.setattr(
         converters.shutil,
         "which",
-        lambda name: "C:/installed converter/dwg2dxf.exe" if "dwg2dxf" in name else None,
+        lambda name: str(executable) if "dwg2dxf" in name else None,
     )
 
 
@@ -70,6 +74,7 @@ def test_converter_status_only_detects(monkeypatch):
 def test_missing_converter_is_actionable(dwg_file, tmp_path, monkeypatch):
     monkeypatch.delenv("TCAD_DWG2DXF", raising=False)
     monkeypatch.setattr(converters.shutil, "which", lambda name: None)
+    monkeypatch.setattr("agentcad.install.find_installed_dwg2dxf", lambda: None)
     error = _error(
         "CONVERTER_NOT_FOUND",
         converters.convert_file,
@@ -97,7 +102,7 @@ def test_conversion_uses_list_and_validates_real_dxf(
             command, 0, b"converted", b"entity approximation warning"
         )
 
-    monkeypatch.setattr(converters.subprocess, "run", run)
+    monkeypatch.setattr(converters, "_run_converter", run)
     target = tmp_path / "converted.dxf"
     result = converters.convert_file(dwg_file, target, timeout=12)
     assert len(ezdxf.readfile(target).modelspace()) == 1
@@ -106,9 +111,7 @@ def test_conversion_uses_list_and_validates_real_dxf(
     command, options = calls[0]
     assert isinstance(command, list)
     assert command[-1] == str(dwg_file.resolve())
-    assert options["shell"] is False
-    assert options["timeout"] == 12
-    assert options["stdin"] == subprocess.DEVNULL
+    assert options == {"timeout": 12}
     assert Path(command[command.index("-o") + 1]).suffix == ".dxf"
 
 
@@ -133,7 +136,7 @@ def test_failed_conversion_is_atomic(
             return subprocess.CompletedProcess(command, 1, b"", b"bad input")
         return subprocess.CompletedProcess(command, 0, b"", b"")
 
-    monkeypatch.setattr(converters.subprocess, "run", run)
+    monkeypatch.setattr(converters, "_run_converter", run)
     target = tmp_path / "output.dxf"
     target.write_bytes(b"keep original")
     code = {
@@ -192,16 +195,26 @@ def test_readable_dxf_preserves_original(dxf_file):
     assert dxf_file.exists()
 
 
-def test_readable_dwg_cleans_temporary(dwg_file, monkeypatch):
-    def convert(source, target, **kwargs):
-        ezdxf.new("R2018").saveas(target)
+def test_readable_dwg_keeps_stable_cache_until_explicit_cleanup(
+    dwg_file, tmp_path, configured_converter, monkeypatch
+):
+    def run(command, **kwargs):
+        ezdxf.new("R2018").saveas(command[command.index("-o") + 1])
+        return subprocess.CompletedProcess(command, 0, b"", b"")
 
-    monkeypatch.setattr(converters, "convert_file", convert)
+    monkeypatch.setattr(converters, "_run_converter", run)
     with converters.readable_dxf(dwg_file) as path:
-        directory = path.parent
+        original = path
         assert path.is_file()
         ezdxf.readfile(path)
-    assert not directory.exists()
+    assert original.exists()
+    monkeypatch.setattr(converters, "_run_converter", lambda *a, **kw: pytest.fail("Must reuse cache"))
+    with converters.readable_dxf(dwg_file) as path:
+        assert path == original
+    # Explicit removal when no reader holds the conversion invalidates the cache.
+    original.unlink()
+    original.with_suffix(".json").unlink()
+    assert not original.exists()
 
 
 def test_implicit_dwg_read_preserves_diagnostics_and_original_path(
@@ -215,7 +228,7 @@ def test_implicit_dwg_read_preserves_diagnostics_and_original_path(
         document.saveas(command[command.index("-o") + 1])
         return subprocess.CompletedProcess(command, 0, b"converted", b"unsupported object warning")
 
-    monkeypatch.setattr(converters.subprocess, "run", run)
+    monkeypatch.setattr(converters, "_run_converter", run)
     response = execute_request({"command": "info", "args": {"input": str(dwg_file)}})
     assert response["ok"], response
     result = response["result"]

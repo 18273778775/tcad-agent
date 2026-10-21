@@ -1,0 +1,84 @@
+name: CLI checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-and-distribution:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ['3.11', '3.12', '3.13']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install development tools
+        run: python -m pip install -e ".[dev]" uv build
+      - name: Lint
+        run: ruff check --select E4,E7,E9,F src tests scripts
+      - name: Unit tests
+        run: python -m pytest -q
+      - name: Build source and wheel
+        run: python -m build
+      - name: Install wheel as a tool outside the source checkout
+        env:
+          TCAD_TEST_DISTRIBUTION: '1'
+        run: python -m pytest tests/test_distribution.py -q
+      - name: Windows user installer with Python/pip and no uv requirement
+        if: matrix.os == 'windows-latest' && matrix.python == '3.12'
+        shell: pwsh
+        run: |
+          $wheel = (Get-ChildItem dist/*.whl | Select-Object -First 1).FullName
+          .\scripts\install.ps1 -UsePip -PackageSource $wheel -InstallRoot (Join-Path $env:RUNNER_TEMP 'tcad-cli-check') -NoModifyUserPath
+          if ($LASTEXITCODE -ne 0) { throw 'User installation failed.' }
+          tcad --version
+          $response = tcad capabilities | ConvertFrom-Json
+          if (-not $response.ok) { throw 'Installed command failed.' }
+      - name: Unix user installer
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        shell: bash
+        run: |
+          export TCAD_INSTALL_SOURCE="$(realpath dist/*.whl)"
+          export TCAD_INSTALL_ROOT="$RUNNER_TEMP/tcad-cli-check"
+          sh scripts/install.sh
+          . "$TCAD_INSTALL_ROOT/env"
+          tcad --version
+          tcad capabilities
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        with:
+          name: python-distributions
+          path: dist/*
+
+  real-dwg:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e ".[dev]"
+      - name: Provision pinned official converter and independent DWG fixture
+        shell: pwsh
+        run: |
+          $converter = & .\scripts\install-libredwg.ps1 -IncludeTestFixture
+          if (-not (Test-Path -LiteralPath $converter -PathType Leaf)) { throw 'Missing converter.' }
+          "TCAD_DWG2DXF=$converter" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Real conversion must pass, without skips
+        shell: pwsh
+        run: |
+          python -m pytest tests/test_dwg_integration.py -q --junitxml=dwg-results.xml
+          if ($LASTEXITCODE -ne 0) { throw 'Real DWG integration failed.' }
+          [xml]$report = Get-Content -LiteralPath dwg-results.xml
+          foreach ($suite in $report.testsuites.testsuite) {
+            if ([int]$suite.skipped -ne 0 -or [int]$suite.tests -lt 1) { throw 'DWG integration may not skip.' }
+          }

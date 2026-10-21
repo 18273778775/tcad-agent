@@ -10,7 +10,10 @@ from pathlib import Path
 
 from . import __version__
 from .errors import CadError
-from .protocol import MAX_JSON_BYTES, execute_request, failure, loads_json
+from .transport import MAX_JSON_BYTES, loads_json
+from .output import bounded_failure as failure
+from .output import DEFAULT_OUTPUT_BYTES, validate_result_destination
+from .resources import run_request
 
 
 class Parser(argparse.ArgumentParser):
@@ -31,7 +34,7 @@ def parser():
         nargs="?",
         default="all",
     )
-    for name in ("info", "query", "measure", "render"):
+    for name in ("info", "query", "measure", "render", "export"):
         sub = commands.add_parser(name)
         sub.add_argument("input")
         sub.add_argument("--layout", default="Model")
@@ -43,11 +46,29 @@ def parser():
             sub.add_argument("--bbox", nargs=4, type=float)
             sub.add_argument("--offset", type=int, default=0)
             sub.add_argument("--limit", type=int, default=100)
+            sub.add_argument("--cursor")
+            sub.add_argument("--vertex-offset", type=int)
+            sub.add_argument("--vertex-limit", type=int)
+        if name == "info":
+            sub.add_argument("--bounds", dest="include_bounds", action="store_true")
         if name == "measure":
             sub.add_argument("--handle", dest="handles", action="append", required=True)
         if name == "render":
             sub.add_argument("--output", required=True)
             sub.add_argument("--overwrite", action="store_true")
+            sub.add_argument("--type", dest="types", action="append")
+            sub.add_argument("--layer")
+            sub.add_argument("--handle", dest="handles", action="append")
+            sub.add_argument("--max-entities", type=int, default=20000)
+            sub.add_argument("--max-svg-bytes", type=int, default=8 * 1024 * 1024)
+        if name == "export":
+            sub.add_argument("--output", required=True)
+            sub.add_argument("--overwrite", action="store_true")
+            sub.add_argument("--type", dest="types", action="append")
+            sub.add_argument("--layer")
+            sub.add_argument("--handle", dest="handles", action="append")
+            sub.add_argument("--max-entities", type=int, default=100000)
+            sub.add_argument("--max-bytes", type=int, default=64 * 1024 * 1024)
     for name in ("new", "apply"):
         sub = commands.add_parser(name)
         sub.add_argument("--output", required=True)
@@ -56,6 +77,8 @@ def parser():
         if name == "apply":
             sub.add_argument("--input")
             sub.add_argument("--plan", required=True, help="JSON file, or - for stdin")
+            sub.add_argument("--expected-source-sha256")
+            sub.add_argument("--expected-output-sha256")
         else:
             sub.add_argument(
                 "--units", choices=["mm", "cm", "m", "in", "ft", "unitless"], default="mm"
@@ -81,9 +104,25 @@ def parser():
     sub.add_argument("--spec", required=True)
     sub.add_argument("--model", required=True)
     sub.add_argument("--tolerance-mm", dest="tolerance_mm", type=float, default=0.01)
+    sub.add_argument("--source", help="Original CAD for strict source/model verification")
+    sub.add_argument("--mapping", help="Role mapping for strict verification")
+    sub = commands.add_parser("setup-dwg", help="Install the pinned optional DWG backend for this user")
+    sub.add_argument("--data-dir")
     sub = commands.add_parser("batch", help="Ordered JSON array of requests; each plan is atomic")
     sub.add_argument("--file", default="-", help="JSON file, or - for stdin")
     commands.add_parser("serve", help="One JSON request and response per line over stdio")
+    for name, sub in commands.choices.items():
+        if name == "serve":
+            continue
+        sub.add_argument("--detail", choices=["summary", "full"], default="summary")
+        sub.add_argument("--fields", type=lambda value: [item.strip() for item in value.split(",") if item.strip()],
+                         help="Comma-separated entity fields (query) or dotted result fields")
+        sub.add_argument("--no-provenance", action="store_true")
+        sub.add_argument("--max-output-bytes", type=int, default=DEFAULT_OUTPUT_BYTES)
+        sub.add_argument("--result-file", help="Write complete selected result JSON; return its path/hash")
+        sub.add_argument("--overwrite-result-file", action="store_true")
+        sub.add_argument("--timeout-seconds", type=float)
+        sub.add_argument("--max-memory-mb", type=int, default=1024)
     return root
 
 
@@ -122,7 +161,10 @@ def serve():
         try:
             if isinstance(raw, bytes):
                 raw = raw.decode("utf-8")
-            emit(execute_request(loads_json(raw)))
+            result = run_request(loads_json(raw))
+            emit(result)
+            if result.get("error", {}).get("code") == "INTERRUPTED":
+                return 130
         except UnicodeDecodeError:
             emit(failure(CadError("INVALID_JSON", "JSON input must be valid UTF-8.")))
         except CadError as exc:
@@ -132,41 +174,44 @@ def serve():
 def main(argv=None):
     for stream in (sys.stdin, sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
-            stream.reconfigure(encoding="utf-8", errors="backslashreplace")
+            stream.reconfigure(encoding="utf-8", errors="backslashreplace", newline="\n")
     try:
         args = vars(parser().parse_args(argv))
         command = args.pop("command")
         if command == "serve":
             return serve()
+        if args.get("result_file"):
+            target = Path(args["result_file"]).expanduser().resolve()
+            for key in ("file", "plan", "spec", "mapping", "input", "output", "model", "source"):
+                source = args.get(key)
+                if isinstance(source, str) and source != "-" and Path(source).expanduser().resolve() == target:
+                    raise CadError("OUTPUT_CONFLICT", "Result JSON must not replace an input, plan, spec or model.")
+            validate_result_destination(target, args.get("overwrite_result_file", False))
         if command == "batch":
-            requests = read_json_file(args["file"])
-            if not isinstance(requests, list) or len(requests) > 1000:
-                raise CadError(
-                    "INVALID_REQUEST", "Batch must be an array of at most 1000 requests."
-                )
-            results = [execute_request(request) for request in requests]
-            emit(
-                {
-                    "schema_version": "1.0",
-                    "id": None,
-                    "ok": all(result["ok"] for result in results),
-                    "results": results,
-                }
-            )
-            return 0 if all(result["ok"] for result in results) else 1
+            from .batch import execute_batch
+            response = execute_batch(read_json_file(args["file"]), args)
+            emit(response)
+            return 0 if response["ok"] else 1
         if command == "apply":
             args["plan"] = read_json_file(args["plan"])
         if command == "room-extract":
             args["mapping"] = read_json_file(args["mapping"])
         if command in {"room-model", "room-verify"}:
             args["spec"] = read_json_file(args["spec"])
+        if command == "room-verify" and args.get("mapping"):
+            args["mapping"] = read_json_file(args["mapping"])
         args = {key: value for key, value in args.items() if value is not None}
-        result = execute_request({"command": command, "args": args})
+        result = run_request({"command": command, "args": args})
         emit(result)
+        if result.get("error", {}).get("code") == "INTERRUPTED":
+            return 130
         return 0 if result["ok"] else 1
     except CadError as exc:
         emit(failure(exc))
         return 2
+    except OSError as exc:
+        emit(failure(CadError("IO_ERROR", "Cannot read or write CLI files.", {"reason": str(exc)[:512]})))
+        return 1
     except KeyboardInterrupt:
         emit(failure(CadError("INTERRUPTED", "Operation interrupted.")))
         return 130

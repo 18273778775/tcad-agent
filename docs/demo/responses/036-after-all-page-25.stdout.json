@@ -192,7 +192,9 @@
         "type": "TEXT",
         "layer": "ROOM_LABEL",
         "color": 256,
+        "text_length": 22,
         "text": "A101 / CONTROLLED ROOM",
+        "plain_text": "A101 / CONTROLLED ROOM",
         "insert": [
           1000.0,
           2400.0,
@@ -206,7 +208,6 @@
           0.0,
           1.0
         ],
-        "plain_text": "A101 / CONTROLLED ROOM",
         "bounds": {
           "min": [
             1000.0,
@@ -226,7 +227,9 @@
         "type": "TEXT",
         "layer": "VIEW_LABEL",
         "color": 256,
+        "text_length": 32,
         "text": "PLAN / CLEAR INTERNAL DIMENSIONS",
+        "plain_text": "PLAN / CLEAR INTERNAL DIMENSIONS",
         "insert": [
           0.0,
           -1450.0,
@@ -240,7 +243,6 @@
           0.0,
           1.0
         ],
-        "plain_text": "PLAN / CLEAR INTERNAL DIMENSIONS",
         "bounds": {
           "min": [
             0.0,
@@ -260,7 +262,9 @@
         "type": "TEXT",
         "layer": "OPENING_LABEL",
         "color": 256,
+        "text_length": 22,
         "text": "D1 900 x 2100 / SILL 0",
+        "plain_text": "D1 900 x 2100 / SILL 0",
         "insert": [
           500.0,
           -650.0,
@@ -274,7 +278,6 @@
           0.0,
           1.0
         ],
-        "plain_text": "D1 900 x 2100 / SILL 0",
         "bounds": {
           "min": [
             500.0,
@@ -294,7 +297,9 @@
         "type": "TEXT",
         "layer": "OPENING_LABEL",
         "color": 256,
+        "text_length": 25,
         "text": "W1 1600 x 1200 / SILL 900",
+        "plain_text": "W1 1600 x 1200 / SILL 900",
         "insert": [
           1800.0,
           5250.0,
@@ -308,7 +313,6 @@
           0.0,
           1.0
         ],
-        "plain_text": "W1 1600 x 1200 / SILL 900",
         "bounds": {
           "min": [
             1800.0,
@@ -478,7 +482,9 @@
         "type": "TEXT",
         "layer": "DIM_LENGTH",
         "color": 256,
+        "text_length": 7,
         "text": "6400 mm",
+        "plain_text": "6400 mm",
         "insert": [
           2800.0,
           -900.0,
@@ -492,7 +498,6 @@
           0.0,
           1.0
         ],
-        "plain_text": "6400 mm",
         "bounds": {
           "min": [
             2800.0,
@@ -662,7 +667,9 @@
         "type": "TEXT",
         "layer": "DIM_WIDTH",
         "color": 256,
+        "text_length": 7,
         "text": "4800 mm",
+        "plain_text": "4800 mm",
         "insert": [
           -1050.0,
           2000.0,
@@ -676,7 +683,6 @@
           0.0,
           1.0
         ],
-        "plain_text": "4800 mm",
         "bounds": {
           "min": [
             -1220.0,
@@ -696,6 +702,16 @@
         "type": "LWPOLYLINE",
         "layer": "ELEVATION_OUTLINE",
         "color": 256,
+        "point_count": 4,
+        "closed": true,
+        "coordinate_system": "OCS",
+        "point_format": "x,y,start_width,end_width,bulge",
+        "elevation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
         "points": [
           [
             10000.0,
@@ -726,15 +742,13 @@
             0.0
           ]
         ],
-        "point_format": "x,y,start_width,end_width,bulge",
-        "closed": true,
-        "elevation": 0.0,
-        "extrusion": [
-          0.0,
-          0.0,
-          1.0
-        ],
-        "coordinate_system": "OCS",
+        "geometry_page": {
+          "offset": 0,
+          "returned": 4,
+          "total": 4,
+          "has_more": false,
+          "next_offset": null
+        },
         "bounds": {
           "min": [
             10000.0,
@@ -754,6 +768,16 @@
         "type": "LWPOLYLINE",
         "layer": "SLAB_OUTLINE",
         "color": 256,
+        "point_count": 4,
+        "closed": true,
+        "coordinate_system": "OCS",
+        "point_format": "x,y,start_width,end_width,bulge",
+        "elevation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
         "points": [
           [
             9800.0,
@@ -784,15 +808,13 @@
             0.0
           ]
         ],
-        "point_format": "x,y,start_width,end_width,bulge",
-        "closed": true,
-        "elevation": 0.0,
-        "extrusion": [
-          0.0,
-          0.0,
-          1.0
-        ],
-        "coordinate_system": "OCS",
+        "geometry_page": {
+          "offset": 0,
+          "returned": 4,
+          "total": 4,
+          "has_more": false,
+          "next_offset": null
+        },
         "bounds": {
           "min": [
             9800.0,
@@ -812,6 +834,16 @@
         "type": "LWPOLYLINE",
         "layer": "SLAB_OUTLINE",
         "color": 256,
+        "point_count": 4,
+        "closed": true,
+        "coordinate_system": "OCS",
+        "point_format": "x,y,start_width,end_width,bulge",
+        "elevation": 0.0,
+        "extrusion": [
+          0.0,
+          0.0,
+          1.0
+        ],
         "points": [
           [
             9800.0,
@@ -842,15 +874,13 @@
             0.0
           ]
         ],
-        "point_format": "x,y,start_width,end_width,bulge",
-        "closed": true,
-        "elevation": 0.0,
-        "extrusion": [
-          0.0,
-          0.0,
-          1.0
-        ],
-        "coordinate_system": "OCS",
+        "geometry_page": {
+          "offset": 0,
+          "returned": 4,
+          "total": 4,
+          "has_more": false,
+          "next_offset": null
+        },
         "bounds": {
           "min": [
             9800.0,
@@ -867,6 +897,7 @@
       }
     ],
     "total": 71,
+    "returned": 25,
     "offset": 25,
     "limit": 25,
     "layout": "Model",
@@ -875,8 +906,30 @@
       "code": 4
     },
     "warnings": [
-      "Bounds are approximate geometric extents; text extents depend on available fonts."
+      "Bounds are approximate; query does not expand INSERT entities."
     ],
+    "source_revision": "stat-v1:bf91f54f9b675cee8f7f2e7c3d26b5f61836f4363092297aa6636008dd0dc906",
+    "has_more": true,
+    "source_sha256": "a401f418ef752a1a3b0cb70481f4c62ff1c4036166f6886de8965ba22d31c357",
+    "next_cursor": "eyJ2IjoyLCJyIjoic3RhdC12MTpiZjkxZjU0ZjliNjc1Y2VlOGY3ZjJlN2MzZDI2YjVmNjE4MzZmNDM2MzA5MjI5N2FhNjYzNjAwOGRkMGRjOTA2IiwicSI6IjBjZmJkNWJlNjc1NTk4OTdiNmQ5MjMxM2JjM2NmYzE5OGJlZWJmYWM3YmZjMjM0ZjkxZGQxY2JlNTlkZjBjNmQiLCJhIjo1MH0",
+    "cache": {
+      "hit": true,
+      "storage": "sqlite",
+      "native_entities": true
+    },
     "source": "revised-complete-room.dxf"
+  },
+  "output": {
+    "detail": "full",
+    "max_bytes": 1048576,
+    "truncated": false,
+    "omitted_sections": 0,
+    "omissions": []
+  },
+  "resources": {
+    "elapsed_seconds": 2.547,
+    "peak_rss_bytes": 75055104,
+    "timeout_seconds": 60.0,
+    "max_memory_mb": 1024
   }
 }
