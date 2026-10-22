@@ -12,7 +12,7 @@ PackageSource and InstallRoot allow explicit offline/local-wheel installation.
 #>
 [CmdletBinding()]
 param(
-    [string]$PackageSource = 'https://codeload.github.com/18273778775/tcad-agent/zip/refs/tags/v0.2.0',
+    [string]$PackageSource = 'https://codeload.github.com/18273778775/tcad-agent/zip/refs/tags/v0.3.0',
     [string]$InstallRoot = '',
     [switch]$UsePip,
     [switch]$NoModifyUserPath
@@ -25,7 +25,7 @@ if (-not $InstallRoot) {
 $root = [IO.Path]::GetFullPath($InstallRoot)
 $bin = Join-Path $root 'bin'
 $environments = Join-Path $root 'venvs'
-$environment = Join-Path $environments ('0.2.0-' + [Guid]::NewGuid().ToString('N'))
+$environment = Join-Path $environments ('0.3.0-' + [Guid]::NewGuid().ToString('N'))
 foreach ($directory in @($root, $bin, $environments)) {
     $ancestor = $directory
     while ($ancestor) {

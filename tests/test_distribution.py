@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_version_and_tool_entrypoints_agree():
     metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
-    assert metadata["version"] == __version__ == "0.2.0"
+    assert metadata["version"] == __version__ == "0.3.0"
     assert metadata["scripts"]["tcad"] == "agentcad.cli:main"
     assert metadata["license"] == "Apache-2.0"
 
@@ -108,7 +108,7 @@ def test_wheel_installs_as_isolated_cli(tmp_path):
     assert installed.returncode == 0, installed.stderr
     command = tmp_path / "bin" / ("tcad.exe" if os.name == "nt" else "tcad")
     version = subprocess.run([str(command), "--version"], cwd=tmp_path, env=environment, capture_output=True, text=True, timeout=30)
-    assert version.returncode == 0 and "0.2.0" in version.stdout
+    assert version.returncode == 0 and "0.3.0" in version.stdout
     result = subprocess.run([str(command), "capabilities"], cwd=tmp_path, env=environment, capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout)["ok"] is True

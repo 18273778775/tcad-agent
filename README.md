@@ -5,10 +5,13 @@
 专供 agent 使用的无界面 2D CAD CLI。支持 DXF 读取、分页查询、精确测量、
 JSON 事务编辑、SVG 预览，以及通过 LibreDWG 读取 DWG。
 普通命令默认输出 JSON；提供可发现的 JSON Schema、稳定错误码和 JSONL 标准输入服务。
-0.2.0 默认响应预算为 **32 KiB**，支持持久游标、字段投影、顶点分页、完整 JSONL 文件导出、
+0.3.0 默认响应预算为 **32 KiB**，支持持久游标、字段投影、顶点分页、完整 JSONL 文件导出、
 时间/内存监督和并发版本检查。用法见 [Agent 调用指南](docs/agent-usage.md)；
 100k 实体、26.32 MiB 图纸的实测与限制见 [大图性能](docs/large-drawing-performance.md)。
 另提供显式映射的完整矩形房间提取、GLB/OBJ/三维 DXF 建模和文件回读核验。
+新增按图框分图、图名命名、独立 DXF、裁切 SVG、PNG 缩略图与离线 HTML 图集，
+并实际回读验证后发布成果。支持嵌套块有效图层筛选、面积并集、标注关联和正交轴网。
+见 [分图工作流](docs/sheet-workflow.md) 与 [0.3.0 更新](docs/releases/0.3.0.md)。
 已跑通长宽高事务修改后的完整验收，见 [房间流程与实测结果](docs/room-workflow.md)。
 
 本项目是在分析当前目录的旧 CAD 看图软件分发包后独立实现的工具。
@@ -18,7 +21,7 @@ JSON 事务编辑、SVG 预览，以及通过 LibreDWG 读取 DWG。
 ![完整房间模型与 CAD 尺寸对照](docs/assets/room-validation.jpg)
 
 完整房间样例已通过 55 次 CLI 调用，六个模型均通过当前源图重新提取与文件回读核验。
-本轮全量测试为 204 passed、1 项可选隔离安装测试跳过、9 subtests passed。净尺寸从
+房间功能初版验收为 204 passed、1 项可选隔离安装测试跳过、9 subtests passed。净尺寸从
 6000 × 4500 × 3000 mm 事务修改为 6400 × 4800 × 3200 mm 后，
 重新打开三维模型的最大净尺寸误差为 0.000191 mm（容差 0.01 mm）。
 这是显式映射的受控房间验收，不代表任意施工图自动识别。
@@ -30,17 +33,17 @@ JSON 事务编辑、SVG 预览，以及通过 LibreDWG 读取 DWG。
 已有 [uv](https://docs.astral.sh/uv/getting-started/installation/) 和 Git 时，Windows、Linux、macOS 通用，无需手工 clone：
 
 ```sh
-uv tool install --python 3.12 git+https://github.com/18273778775/tcad-agent.git@v0.2.0
+uv tool install --python 3.12 git+https://github.com/18273778775/tcad-agent.git@v0.3.0
 ```
 
 安装后运行 `tcad capabilities` 和 `tcad schema request`。如果 uv 提示命令目录不在 PATH，
 执行 `uv tool update-shell` 后重开终端。已有 pipx 也可直接运行
-`pipx install git+https://github.com/18273778775/tcad-agent.git@v0.2.0`。
+`pipx install git+https://github.com/18273778775/tcad-agent.git@v0.3.0`。
 
 没有 uv 或 Git 的 Windows 用户，在 **Python 3.11+** 的 PowerShell 中执行：
 
 ```powershell
-irm https://raw.githubusercontent.com/18273778775/tcad-agent/v0.2.0/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/18273778775/tcad-agent/v0.3.0/scripts/install.ps1 | iex
 ```
 
 此脚本创建用户隔离环境、安装 `tcad` 命令并更新用户 PATH，当前 PowerShell 立即可用，
@@ -62,7 +65,7 @@ tcad doctor
 
 ```powershell
 New-Item -ItemType Directory -Force artifacts | Out-Null
-Invoke-WebRequest https://raw.githubusercontent.com/18273778775/tcad-agent/v0.2.0/examples/plate.json -OutFile artifacts/plate-plan.json
+Invoke-WebRequest https://raw.githubusercontent.com/18273778775/tcad-agent/v0.3.0/examples/plate.json -OutFile artifacts/plate-plan.json
 tcad apply --plan artifacts/plate-plan.json --output artifacts/plate.dxf
 tcad info artifacts/plate.dxf
 tcad query artifacts/plate.dxf --type CIRCLE --layer HOLES --limit 10

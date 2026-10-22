@@ -4,7 +4,7 @@
 set -eu
 
 # Requires Python 3.11+ or uv. Override source/root explicitly for offline installs.
-package_source=${TCAD_INSTALL_SOURCE:-https://codeload.github.com/18273778775/tcad-agent/zip/refs/tags/v0.2.0}
+package_source=${TCAD_INSTALL_SOURCE:-https://codeload.github.com/18273778775/tcad-agent/zip/refs/tags/v0.3.0}
 install_root=${TCAD_INSTALL_ROOT:-${XDG_DATA_HOME:-"$HOME/.local/share"}/tcad-agent-cli}
 download_directory=
 temporary_shim=
@@ -35,7 +35,7 @@ case "$package_source" in
 esac
 mkdir -p "$install_root/venvs" "$install_root/bin"
 install_root=$(cd "$install_root" && pwd)
-environment=$(mktemp -d "$install_root/venvs/0.2.0-XXXXXXXX")
+environment=$(mktemp -d "$install_root/venvs/0.3.0-XXXXXXXX")
 if command -v uv >/dev/null 2>&1; then
     uv venv --python 3.12 "$environment"
     uv pip install --python "$environment/bin/python" "$package_source"

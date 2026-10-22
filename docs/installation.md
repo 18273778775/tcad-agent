@@ -1,24 +1,24 @@
 # 安装、升级和发布
 
-TCAD Agent CLI 0.2.0 的发行来源是本仓库的 `v0.2.0` GitHub tag。命令安装到独立 Python
+TCAD Agent CLI 0.3.0 的发行来源是本仓库的 `v0.3.0` GitHub tag。命令安装到独立 Python
 环境，不要求下载整个工作区、不要求管理员权限。程序需要 Python 3.11+；uv 可以管理所需 Python。
 
 ## 推荐：uv 或 pipx
 
 ```sh
-uv tool install --python 3.12 git+https://github.com/18273778775/tcad-agent.git@v0.2.0
+uv tool install --python 3.12 git+https://github.com/18273778775/tcad-agent.git@v0.3.0
 ```
 
 该推荐形式需要本机已有 uv 与 Git；无需手动 clone。已有 pipx、Git 与 Python 3.11+：
 
 ```sh
-pipx install git+https://github.com/18273778775/tcad-agent.git@v0.2.0
+pipx install git+https://github.com/18273778775/tcad-agent.git@v0.3.0
 ```
 
 也可使用带 `.zip` 后缀的 canonical archive URL（部分网络中 GitHub archive 重定向较慢）：
 
 ```sh
-uv tool install --python 3.12 https://github.com/18273778775/tcad-agent/archive/refs/tags/v0.2.0.zip
+uv tool install --python 3.12 https://github.com/18273778775/tcad-agent/archive/refs/tags/v0.3.0.zip
 ```
 
 安装后执行 `tcad --version`、`tcad capabilities`、`tcad schema request`。
@@ -33,7 +33,7 @@ uv tool install --python 3.12 https://github.com/18273778775/tcad-agent/archive/
 已有 Python 3.11+：
 
 ```powershell
-irm https://raw.githubusercontent.com/18273778775/tcad-agent/v0.2.0/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/18273778775/tcad-agent/v0.3.0/scripts/install.ps1 | iex
 ```
 
 下载的是本项目固定 tag 的安装脚本；也可先保存并检查脚本再运行。
@@ -46,7 +46,7 @@ irm https://raw.githubusercontent.com/18273778775/tcad-agent/v0.2.0/scripts/inst
 可指定路径或本地 wheel，并禁止持久修改用户 PATH：
 
 ```powershell
-.\install.ps1 -PackageSource C:\packages\tcad_agent-0.2.0-py3-none-any.whl -InstallRoot C:\Tools\tcad -NoModifyUserPath
+.\install.ps1 -PackageSource C:\packages\tcad_agent-0.3.0-py3-none-any.whl -InstallRoot C:\Tools\tcad -NoModifyUserPath
 ```
 
 可以加 `-UsePip` 明确使用 Python 自带 pip，便于没有 uv 的环境或管理员已有 pip 配置的环境。
@@ -59,7 +59,7 @@ irm https://raw.githubusercontent.com/18273778775/tcad-agent/v0.2.0/scripts/inst
 已有 Python 3.11+、venv 和 pip 时：
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/18273778775/tcad-agent/v0.2.0/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/18273778775/tcad-agent/v0.3.0/scripts/install.sh | sh
 ```
 
 安装结束后执行 `. "$HOME/.local/share/tcad-agent-cli/env"`。该操作可放入 shell profile。
@@ -91,7 +91,7 @@ Linux/macOS 自行安装 LibreDWG，把 `dwg2dxf` 放入 PATH 或设置 `TCAD_DW
 固定 URL 安装不会悄悄追踪 main。升级时把版本替换成新的已发布 tag，并重新安装：
 
 ```sh
-uv tool install --force --python 3.12 git+https://github.com/18273778775/tcad-agent.git@v0.2.0
+uv tool install --force --python 3.12 git+https://github.com/18273778775/tcad-agent.git@v0.3.0
 uv tool uninstall tcad-agent
 ```
 

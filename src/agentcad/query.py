@@ -13,6 +13,14 @@ _QUERY_FIELDS = {
     "height", "rotation", "char_height", "width", "plain_text", "bounds", "bounds_kind",
     "point_count", "text_length", "name", "xscale", "yscale", "zscale", "geometry_page",
     "truncation",
+    "tag", "attributes", "attribute_count", "attribute_complete", "dimension_type",
+    "dimension_type_raw", "defpoint", "defpoint2", "defpoint3", "defpoint4", "defpoint5",
+    "defpoint5_coordinate_system", "measurement", "measure_kind", "actual_measurement",
+    "text_override", "dimstyle", "geometry_block", "dimlfac", "angle", "warnings",
+    "block_base_point", "block_entity_count", "matrix44", "matrix44_convention",
+    "block_entities", "block_complete", "block_coordinate_system", "block_omissions",
+    "block_omission_count", "block_omissions_complete",
+    "entity_key", "instance_path", "root_handle", "scope", "world_bbox", "visible",
 }
 
 
@@ -40,6 +48,7 @@ def query_entities(
     path, layout="Model", types=None, layer=None, text=None, handles=None, bbox=None,
     offset=0, limit=100, detail="full", fields=None, cursor=None, max_output_bytes=32768,
     vertex_offset=0, vertex_limit=128,
+    layers=None, exclude_layers=None, text_scope="layout", expected_source_revision=None,
 ):
     """Query native entities using a bounded, persistent SQLite query snapshot.
 
@@ -65,6 +74,13 @@ def query_entities(
         raise CadError("INVALID_ARGUMENT", "Types must be a list of entity names.")
     if layer is not None and not isinstance(layer, str):
         raise CadError("INVALID_ARGUMENT", "Layer must be a string.")
+    for value in (layers, exclude_layers):
+        if value is not None and (not isinstance(value, list) or any(not isinstance(v, str) or not v for v in value)):
+            raise CadError("INVALID_ARGUMENT", "Layers must be lists of nonempty layer names.")
+    if text_scope not in {"layout", "block", "all"}:
+        raise CadError("INVALID_ARGUMENT", "text_scope must be layout, block or all.")
+    if expected_source_revision is not None and not isinstance(expected_source_revision, str):
+        raise CadError("INVALID_ARGUMENT", "expected_source_revision must be a string.")
     if text is not None and not isinstance(text, str):
         raise CadError("INVALID_ARGUMENT", "Text filter must be a string.")
     normalized = None if handles is None else _validate_handles(handles, allow_empty=True)
@@ -88,6 +104,8 @@ def query_entities(
         layer=layer, text=text, handles=normalized, bbox=bbox, offset=offset, limit=limit,
         detail=detail, fields=fields, cursor=cursor, max_output_bytes=max_output_bytes,
         vertex_offset=vertex_offset, vertex_limit=vertex_limit,
+        layers=layers, exclude_layers=exclude_layers, text_scope=text_scope,
+        expected_source_revision=expected_source_revision,
     )
 
 

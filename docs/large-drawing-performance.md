@@ -19,7 +19,11 @@ The script launches fresh Python workers for cold query, warm pagination,
 layer/type filtering, geometry projection, and a 4 KiB response budget. Source
 parsing and record formatting are instrumented. Warm pages raise immediately if
 `read_document` or `_record` is called. Each workload records peak process RSS,
-core query latency, response bytes, and selected/returned counts.
+core query latency, response bytes, and selected/returned counts. Metadata-only
+filtering may format zero records when SQLite already contains the requested
+base fields; the gate checks the known match count and rejects formatting any
+nonmatching record. A separate geometry-projection gate requires every matching
+LINE record to be formatted.
 
 Default acceptance gates are: at least 100,000 entities; at least 20 MiB DXF;
 cold query <=180 seconds; each warm query <=1 second; each worker peak RSS
@@ -56,17 +60,73 @@ DXF document on first read. Highly complex single entities, unsupported bounds,
 new filters/projections, and larger inputs have separate costs. Rendering and
 DXF edits are not covered by this query benchmark.
 
+## Version 0.3 baseline: 2026-10-22
+
+[Anonymous synthetic report](benchmarks/large-drawing-windows-v3.json). Same
+workload shape and machine class: 100,000 entities, 27,598,152 bytes, Python
+3.12.13, Windows 10, 16 logical CPUs. Generation took 11.86 seconds.
+
+| Workload | Core query latency | Peak RSS | Result bytes | Source parses / formatted records |
+| --- | ---: | ---: | ---: | ---: |
+| Cold compact query | 25.24 s | 210.84 MiB | 5,090 | 1 / 0 |
+| Warm pages (10 pages) | median 17.43 ms; max 49.08 ms | 59.95 MiB | 5,100–5,191/page | 0 / 0 |
+| Layer + type filter (5,000 matches) | 413.63 ms | 62.09 MiB | 5,140 | 0 / 0 |
+| Projected LINE geometry | 6.86 s | 211.30 MiB | 6,916 | 1 / 5,000 |
+| 4 KiB budget | 35.32 ms | 59.79 MiB | 2,689 | 0 / 0 |
+
+All revised gates pass. The original run incorrectly failed a gate requiring
+metadata filtering to format all 5,000 records; the base-field cache correctly
+formatted zero. Revalidation preserved every measured timing and memory value,
+added the expected match count and an explicit geometry-formatting check, and
+retained the initial report digest. It did not rerun or alter workload evidence.
+This compact query workload does not build spatial bounds, and contains no
+INSERTs. It is separate from the real-drawing spatial exercise below. The
+historical end-to-end CLI timings above have not been remeasured for 0.3 and
+must not be treated as a current CLI latency measurement.
+
+### Anonymous real structural drawing spatial exercise
+
+A private 32,815,833-byte DXF with 30,433 native Model-space entities was used
+without adding its drawing, names or paths to the repository. A fresh SQLite
+R-tree and block-annotation index took **40.294 seconds**, with **356.11 MiB**
+peak process working set and a **32,370,688-byte** cache. It indexed 30,430
+computable native bounds, including INSERT world bounds, and 11,433 block text
+or attached attribute instances. Three native entities had no computable bounds;
+seven had partial bounds. One annotation lacked bounds and remains queryable
+without a bbox. These cases remain explicit diagnostics.
+
+Five source-bound sheet regions returned 146–475 native entities, including
+2–61 INSERTs. Warm native spatial selections took **13.24–19.48 ms**; preparing
+new base-field query projections for those regions took **81.68–91.94 ms**.
+Both timings exclude Python process startup, imports and CLI resource
+supervision. They demonstrate this input's warm core selection performance,
+not subsecond complete CLI calls. The cold process peak includes source decoding,
+bounds and block annotations. Measurements, complete exports and rendering still
+decode a CAD document per command; the spatial index does not cache an editable
+geometry model. This sample is not a guarantee for every 30k-entity drawing.
+
+In both query tables, formatted-record counts instrument the query geometry
+formatter (`engine._record`). Cold native metadata extraction and SQLite JSON
+serialization still perform work even when that counter is zero.
+
 ## Query cache and output contract
 
 - Native entity metadata has SQLite indexes for layout/type, layout/layer,
   layout/layer/type, and handles. Selection happens before bounds and geometry
-  formatting. Query returns native INSERT records; it never expands block
-  definitions. INSERT bounds are unavailable in native query, including bbox
-  filtering, rather than expanding the block silently.
+  formatting. Spatial requests build a persistent R-tree lazily. Native INSERT
+  bounds reuse definition-local conservative AABBs, transformed into drawing
+  WCS, with attached attributes included. Bounds are explicitly 2D and may
+  overselect rotated objects. Unknown extents are excluded by bbox filtering
+  with diagnostic counts. Native scope retains native INSERT records.
+  `text_scope=block|all` explicitly adds text/attribute instances with WCS
+  positions and mandatory `entity_key`, `instance_path` and `root_handle`;
+  definition handles alone do not identify drawing instances.
 - Each source version and filter/projection prepares one bounded SQLite result
   snapshot. Keyset `next_cursor` pages read only their selected records. Legacy
   `offset` uses SQL OFFSET, which may scan index entries up to that offset; use
   cursors for deep pagination. Substring text searches require a metadata scan.
+  A fresh base-field projection or bbox filter can reuse the native spatial
+  index without parsing; a fresh geometry projection can require one CAD parse.
 - Cursors bind source version, filters, layout, detail, fields, and vertex paging.
   Source changes return `STALE_CURSOR`; filter changes return `CURSOR_MISMATCH`;
   evicted snapshots return `CURSOR_EXPIRED`. Restart without a cursor in these
@@ -88,7 +148,9 @@ DXF edits are not covered by this query benchmark.
   `tcad-agent/queries`. Set `TCAD_CACHE_DIR` for a task-specific location. SQLite
   stores query text/geometry in plaintext local files, never pickle or code.
   Cache files use least-recently-used cleanup: at most 16 snapshots, 512 MiB
-  total, 128 MiB per snapshot, and 32 query views per snapshot. A full SQLite
+  total, 128 MiB per snapshot, 32 query views per snapshot and a 30-day inactive
+  expiration. Explicit stale-source guards return `STALE_SOURCE`; expired
+  snapshot cursors return `CURSOR_EXPIRED`. A full SQLite
   snapshot returns an actionable `QUERY_CACHE_ERROR` instead of growing without
   limit. Cleanup of files held open by another process is best effort.
 - `info` can skip approximate bounds (`include_bounds=false`, CLI default);

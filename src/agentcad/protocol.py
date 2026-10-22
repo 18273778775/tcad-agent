@@ -39,6 +39,27 @@ HANDLES = {"type": "array", "items": STRING, "minItems": 1, "maxItems": 10000}
 LAYOUT = {"type": "string", "minLength": 1, "default": "Model"}
 FILE_ARGS = {"input": STRING, "layout": LAYOUT}
 CONVERTER = {"type": "string", "enum": ["auto", "libredwg", "oda"], "default": "auto"}
+BBOX = {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4}
+STRINGS = {"type": "array", "items": STRING, "minItems": 1, "maxItems": 256}
+SELECT = {"types": STRINGS, "layer": STRING, "layers": STRINGS, "exclude_layers": STRINGS,
+          "handles": HANDLES, "bbox": BBOX, "sheet": STRING, "manifest": STRING,
+          "expected_source_revision": STRING}
+RENDER_OPTIONS = {"background": {"enum": ["white", "black", "layout"]},
+                  "foreground": {"enum": ["cad", "monochrome"]},
+                  "hatch_mode": {"enum": ["adaptive", "accurate"]},
+                  "lineweight_scale": {"type": "number", "minimum": .05, "maximum": 10},
+                  "font_family": STRING, "layers": STRINGS, "exclude_layers": STRINGS}
+SHEET_OPTIONS = {
+    **FILE_ARGS,
+    "frames": {"type": "array", "minItems": 1, "maxItems": 200, "items": {
+        "oneOf": [STRING, object_schema({"bbox": BBOX, "name": STRING, "number": STRING}, ["bbox"])]}},
+    "frame_layer": STRING,
+    "min_frame_area": {"type": "number", "exclusiveMinimum": 0},
+    "max_sheets": {"type": "integer", "minimum": 1, "maximum": 200},
+    "frame_block_regex": STRING, "frame_size": {"oneOf": [STRING, {"type": "array", "items": {"type": "number", "exclusiveMinimum": 0}, "minItems": 2, "maxItems": 2}]},
+    "title_layer": STRING, "title_regex": STRING, "number_layer": STRING,
+    "shared_frame": {"enum": ["largest", "split"]}, "names": {"type": "object"},
+}
 COMMAND_SCHEMAS = {
     "capabilities": object_schema(),
     "doctor": object_schema(),
@@ -62,10 +83,11 @@ COMMAND_SCHEMAS = {
         },
         ["input"],
     ),
-    "measure": object_schema({**FILE_ARGS, "handles": HANDLES}, ["input", "handles"]),
+    "measure": object_schema({**FILE_ARGS, **SELECT,
+        "max_entities": {"type": "integer", "minimum": 1, "maximum": 100000}}, ["input"]),
     "export": object_schema({**FILE_ARGS, "output": STRING, "overwrite": BOOL,
                              "types": {"type": "array", "items": STRING},
-                             "layer": STRING, "handles": HANDLES,
+                             **SELECT,
                              "max_entities": {"type": "integer", "minimum": 1, "maximum": 1000000},
                              "max_bytes": {"type": "integer", "minimum": 1, "maximum": 1073741824}},
                             ["input", "output"]),
@@ -90,12 +112,33 @@ COMMAND_SCHEMAS = {
         },
         ["output", "plan"],
     ),
-    "render": object_schema({**FILE_ARGS, "output": STRING, "overwrite": BOOL,
+    "render": object_schema({**FILE_ARGS, "output": STRING, "output_dir": STRING, "overwrite": BOOL,
+                             "sheet": STRING, "manifest": STRING, **RENDER_OPTIONS,
+                             "annotate": {"enum": ["labels", "areas", "axes"]}, "legend": BOOL,
+                             "max_annotations": {"type": "integer", "minimum": 1, "maximum": 2000},
+                             "width": {"type": "integer", "minimum": 16, "maximum": 4096},
                              "types": {"type": "array", "items": STRING}, "layer": STRING,
                              "handles": HANDLES,
+                             "bbox": BBOX,
+                             "background": {"enum": ["white", "black", "layout"]},
+                             "foreground": {"enum": ["cad", "monochrome"]},
+                             "hatch_mode": {"enum": ["adaptive", "accurate"]},
+                             "lineweight_scale": {"type": "number", "minimum": 0.05,
+                                                  "maximum": 10},
+                             "font_family": {"type": "string", "minLength": 1, "maxLength": 128},
                              "max_entities": {"type": "integer", "minimum": 1, "maximum": 100000},
                              "max_svg_bytes": {"type": "integer", "minimum": 1024,
-                                               "maximum": 64 * 1024 * 1024}}, ["input", "output"]),
+                                               "maximum": 64 * 1024 * 1024}}, ["input"]),
+    "sheets": object_schema({**SHEET_OPTIONS, "output": STRING, "overwrite": BOOL}, ["input"]),
+    "split": object_schema({**SHEET_OPTIONS, "output_dir": STRING, "preview": BOOL,
+                            "render_options": object_schema(RENDER_OPTIONS),
+                            "thumbnail": BOOL, "thumbnail_width": {"type": "integer", "minimum": 16, "maximum": 4096},
+                            "max_entities": {"type": "integer", "minimum": 1, "maximum": 100000},
+                            "max_svg_bytes": {"type": "integer", "minimum": 1024,
+                                              "maximum": 64 * 1024 * 1024},
+                            "max_total_bytes": {"type": "integer", "minimum": 1024,
+                                                "maximum": 2 * 1024 * 1024 * 1024}},
+                           ["input", "output_dir"]),
     "convert": object_schema(
         {
             "input": STRING,
@@ -125,6 +168,35 @@ COMMAND_SCHEMAS = {
     ),
     "setup-dwg": object_schema({"data_dir": STRING}),
 }
+COMMAND_SCHEMAS["query"]["properties"].update(SELECT)
+COMMAND_SCHEMAS["query"]["properties"]["text_scope"] = {"enum": ["layout", "block", "all"]}
+COMMAND_SCHEMAS.update({
+    "index": object_schema({**FILE_ARGS, "text_scope": {"enum": ["layout", "block", "all"]}}, ["input"]),
+    "area": object_schema({**FILE_ARGS, "handles": HANDLES, "layers": STRINGS,
+        "entity_types": STRINGS, "bbox": BBOX, "sheet": STRING, "manifest": STRING,
+        "mode": {"enum": ["sum", "union", "overlap"]}, "by": {"enum": ["layer", "block", "sheet"]},
+        "tolerance": {"type": "number", "minimum": 0},
+        "flatten_tolerance": {"type": "number", "exclusiveMinimum": 0},
+        "linear_unit": {"enum": ["mm", "cm", "m", "in", "ft"]},
+        "make_valid": BOOL, "output": STRING, "overwrite": BOOL,
+        "evidence_limit": {"type": "integer", "minimum": 1, "maximum": 10000},
+        "max_relations": {"type": "integer", "minimum": 1, "maximum": 1000000}}, ["input"]),
+    "associate": object_schema({**FILE_ARGS, "sheet": STRING, "manifest": STRING,
+        "label_layers": STRINGS, "target_layers": STRINGS, "label_types": STRINGS,
+        "target_types": STRINGS, "label_regex": STRING,
+        "method": {"enum": ["inside", "nearest", "leader"]},
+        "max_distance": {"type": "number", "exclusiveMinimum": 0}, "one_to_one": BOOL,
+        "bbox": BBOX, "flatten_tolerance": {"type": "number", "exclusiveMinimum": 0},
+        "output": STRING, "unmatched_output": STRING, "overwrite": BOOL}, ["input"]),
+    "axes": object_schema({**FILE_ARGS, "sheet": STRING, "manifest": STRING,
+        "line_layers": STRINGS, "label_layers": STRINGS, "label_regex": STRING,
+        "bubble_block_regex": STRING, "tolerance": {"type": "number", "exclusiveMinimum": 0},
+        "max_distance": {"type": "number", "exclusiveMinimum": 0}, "bbox": BBOX,
+        "point": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+        "axes": STRING, "output": STRING, "overwrite": BOOL,
+        "max_axes": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "max_intersections": {"type": "integer", "minimum": 1, "maximum": 100000}}, ["input"]),
+})
 OUTPUT_ARGUMENTS = {
     "detail": {"enum": ["summary", "full"], "default": "summary"},
     "fields": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 128},
@@ -133,7 +205,8 @@ OUTPUT_ARGUMENTS = {
     "max_output_bytes": {"type": "integer", "minimum": 4096, "maximum": MAX_OUTPUT_BYTES},
     "result_file": STRING,
     "overwrite_result_file": BOOL,
-    "timeout_seconds": {"type": "number", "minimum": 0.1, "maximum": 600},
+    "timeout_seconds": {"type": "number", "minimum": 0.1, "maximum": 1800},
+    "cache_dir": STRING,
     "max_memory_mb": {"type": "integer", "minimum": 64, "maximum": 16384},
 }
 for _command_schema in COMMAND_SCHEMAS.values():
@@ -159,19 +232,78 @@ REQUEST_SCHEMA = {
 
 def capabilities():
     from .converters import converter_status
+    from .query import _QUERY_FIELDS
 
     return {
         "name": "tcad-agent",
         "version": __version__,
         "protocol_version": PROTOCOL_VERSION,
-        "commands": list(COMMAND_SCHEMAS),
+        "commands": list(COMMAND_SCHEMAS) + ["batch", "serve"],
+        "operation_commands": list(COMMAND_SCHEMAS),
+        "transport_commands": {"batch": "CLI ordered requests; not atomic", "serve": "CLI JSONL stdio"},
         "transport": ["cli", "jsonl-stdio", "ordered-batch"],
         "formats": {
             "read": ["dxf", "dwg (external converter required)"],
             "write": ["dxf"],
-            "preview": ["svg"],
+            "preview": ["svg", "png"],
         },
         "editing": ["layer", "add", "update", "delete", "transform"],
+        "sheet_workflow": {
+            "discover": "tcad sheets drawing.dwg --output sheets.json",
+            "split_preview_report": "tcad split drawing.dwg --output-dir sheets",
+            "outputs": ["manifest.json", "index.html", "independent DXF per frame", "SVG per frame",
+                        "__tcad_unassigned__.dxf and unassigned.json when entities do not belong to any frame"],
+            "detection": "Axis-aligned rectangular geometry, nested block frames and title text rules; manual frames are supported.",
+            "naming": "Frame-local title and drawing-number evidence, safe unique filenames.",
+            "output_safety": "A new output directory is staged and published only after all requested sheets succeed; existing destinations are refused.",
+            "limits": "At most 200 sheets; entity, per-SVG, total-file, worker time and memory budgets apply.",
+            "boundary": "DXF retains intersecting native entities; SVG is clipped to the frame. See manifest for crossings and unknown extents.",
+            "limitations": ["Detection and naming are geometric/text heuristics; inspect evidence and warnings.",
+                            "Missing xrefs, linked images, proxy geometry and converter omissions cannot be reconstructed."],
+        },
+        "entity_inspection": {
+            "query_export_fields": sorted(_QUERY_FIELDS),
+            "field_discovery_command": "tcad capabilities --detail full --fields entity_inspection",
+            "field_scope": "query/export fields select native entity data; unsupported fields for an entity are absent.",
+            "dimension": {
+                "measurement": "Computed definition geometry, without dimlfac scaling; use measure_kind to distinguish drawing-unit lengths, angular degrees and ordinate WCS vectors.",
+                "actual_measurement": "Optional stored DXF group 42; may be absent or stale.",
+                "text_override": "User dimension text override; rendered display text is not evaluated.",
+                "dimlfac": "Effective dimension-style linear factor including entity overrides; does not establish physical drawing units.",
+                "evidence": ["dimension_type", "dimension_type_raw", "defpoint", "defpoint2", "defpoint3", "defpoint4", "defpoint5", "dimstyle", "geometry_block"],
+            },
+            "attributes": {
+                "native_types": ["ATTRIB", "ATTDEF"],
+                "attached_insert_field": "attributes",
+                "maximum_attached_attributes": 128,
+                "maximum_attached_string_characters": 1024,
+                "completeness_fields": ["attribute_count", "attribute_complete", "truncation"],
+                "text_filter": "Indexes directly placed layout text/attributes; attached INSERT attributes are not automatically expanded.",
+            },
+            "blocks": {
+                "trigger": "Explicitly include block_entities in fields; detail=full alone does not inspect children.",
+                "maximum_children": 128,
+                "maximum_child_vertices": 128,
+                "coordinate_system": "Child handles and coordinates belong to the native block definition. Convert child OCS to definition Cartesian coordinates before transforming.",
+                "matrix44_convention": "row_vector: [x,y,z,1] @ matrix44 maps definition Cartesian coordinates to drawing WCS, including block base point, scale, rotation, OCS and translation.",
+                "completeness_fields": ["block_entity_count", "block_complete", "block_omissions", "block_omission_count", "block_omissions_complete", "truncation"],
+                "limitations": ["First native level only; nested INSERTs and external references are not resolved.",
+                                "MINSERT matrix44 describes the first grid cell only.",
+                                "Child/attribute index pagination is unavailable; inspect omissions instead of assuming completeness."],
+            },
+            "text_encoding": {
+                "metadata_field": "text_encoding",
+                "representation": "Undecodable CAD text is exposed as literal backslash-u escapes with encoding_complete=false; normal Unicode is unchanged and source bytes are preserved.",
+                "maximum_diagnostic_issues": 4,
+                "evidence": "Field paths, character indices, original codepoints and surrogateescape byte escapes; issue_count/issue completeness identify bounded diagnostics.",
+            },
+            "export": {
+                "fields_scope": "Selects entity fields inside JSONL only; the output receipt is not projected by entity field names.",
+                "receipt_fields": ["output", "entity_count", "bytes", "sha256", "format", "layout", "warnings"],
+                "annotation_caps_apply": True,
+                "scope": "Supported native fields; explicit block inspection remains bounded and is not whole-block or lossless DXF export.",
+            },
+        },
         "room_model": {
             "formats": ["glb", "obj", "dxf"],
             "source": "explicit mapped plan and elevation geometry",
@@ -179,6 +311,16 @@ def capabilities():
             "scope": "axis-aligned rectangular rooms with explicit wall and slab thicknesses",
         },
         "transactions": "One apply plan is atomic; batches are ordered and not atomic.",
+        "spatial": {"index": "SQLite R-tree; native INSERT world bounds and instance-specific block text",
+                    "selectors": ["bbox", "sheet with source-bound manifest", "layers", "exclude_layers"],
+                    "text_scope": ["layout", "block", "all"],
+                    "warm_scope": "Native base-field query can avoid parsing. Geometry measurement/export/render still parse once per command."},
+        "area": {"modes": ["sum", "union", "overlap"], "backend": "Shapely/GEOS",
+                 "units": "drawing-unit squared; explicit linear_unit is required for m2 conversion",
+                 "invalid": "reject by default; explicit make_valid records area changes",
+                 "curves": "flatten_tolerance in drawing units; approximation is reported"},
+        "association": {"methods": ["inside", "nearest", "leader"],
+                        "ties": "ambiguous; no silent choice", "axes": "orthogonal finite LINE grids with source label evidence"},
         "limits": {"default_response_bytes": DEFAULT_OUTPUT_BYTES,
                    "maximum_response_bytes": MAX_OUTPUT_BYTES,
                    "default_input_file_mib": 128, "default_result_file_mib": 64,
@@ -204,11 +346,12 @@ def doctor():
         "executable": sys.executable,
         "packages": {
             name: importlib.metadata.version(name)
-            for name in ("tcad-agent", "ezdxf", "jsonschema", "Pillow", "trimesh")
+            for name in ("tcad-agent", "ezdxf", "jsonschema", "Pillow", "trimesh", "shapely", "resvg_py")
         },
         "converters": converter_status(),
         "dxf_backend": "ready",
         "svg_backend": "ready",
+        "png_backend": "resvg_py; static glyph-path SVG, no browser",
     }
 
 
@@ -229,6 +372,9 @@ def dispatch(command, args):
     from .converters import convert_file
 
     presentation = {key: args.pop(key) for key in list(args) if key in OUTPUT_ARGUMENTS}
+    if presentation.get("cache_dir"):
+        import os
+        os.environ["TCAD_CACHE_DIR"] = str(Path(presentation["cache_dir"]).expanduser().resolve())
     if command == "query":
         args.update({key: presentation[key] for key in ("fields", "detail", "max_output_bytes")
                      if key in presentation})
@@ -304,6 +450,26 @@ def _drawing_dispatch(command, args, input_path, conversion_info):
     from .render import render_drawing
     with readable_dxf(input_path, conversion_info=conversion_info) as path:
         options = {key: value for key, value in args.items() if key != "input"}
+        from .io import file_sha256
+        identity = {"path": str(Path(input_path).expanduser().resolve()), "sha256": file_sha256(input_path)}
+        if conversion_info:
+            identity.update(conversion=conversion_info, normalized_dxf_sha256=file_sha256(path))
+        if command in {"render", "area", "associate", "axes", "sheets", "split"}:
+            options["source_info"] = identity
+        if options.get("sheet") is not None and command != "render":
+            from .render_jobs import resolve_sheets
+            from .io import read_document
+            selected = resolve_sheets(None if options.get("manifest") else read_document(path), path, options.pop("sheet"),
+                options.pop("manifest", None), options.get("layout", "Model"), identity)
+            if len(selected) != 1:
+                raise CadError("INVALID_ARGUMENT", "This analysis requires one sheet id or title.")
+            if options.get("bbox"):
+                raise CadError("INVALID_ARGUMENT", "Use sheet or bbox, not both.")
+            options["bbox"] = selected[0]["bbox"]
+            if command == "area":
+                options["sheet_id"] = selected[0]["id"]
+        elif command != "render" and options.pop("manifest", None):
+            raise CadError("INVALID_ARGUMENT", "manifest requires sheet.")
         if command == "info":
             result = engine.inspect_drawing(path, **options)
         elif command == "query":
@@ -313,7 +479,29 @@ def _drawing_dispatch(command, args, input_path, conversion_info):
         elif command == "export":
             result = engine.export_entities(path, options.pop("output"), **options)
         elif command == "render":
-            result = render_drawing(path, options.pop("output"), **options)
+            result = render_drawing(path, options.pop("output", None), **options)
+        elif command == "index":
+            from .spatial import index_drawing
+            result = index_drawing(path, **options)
+        elif command == "area":
+            from .area import area_entities
+            result = area_entities(path, **options)
+        elif command in {"associate", "axes"}:
+            from .semantics import associate_entities, axes_entities
+            result = (associate_entities if command == "associate" else axes_entities)(path, **options)
+        elif command in {"sheets", "split"}:
+            from .sheets import discover_drawing, split_drawing
+            from .io import file_sha256
+
+            identity = {"path": str(Path(input_path).expanduser().resolve()),
+                        "sha256": file_sha256(input_path)}
+            if conversion_info:
+                identity["conversion"] = conversion_info
+                identity["normalized_dxf_sha256"] = file_sha256(path)
+            if command == "sheets":
+                result = discover_drawing(path, **options)
+            else:
+                result = split_drawing(path, options.pop("output_dir"), **options)
         elif command == "apply":
             result = engine.apply_plan(
                 options.pop("plan"), options.pop("output"), input_path=path, **options
@@ -402,7 +590,7 @@ def execute_request(request):
                 args[key] = int(value)
         if args.get("result_file"):
             artifact = Path(args["result_file"]).expanduser().resolve()
-            for key in ("input", "output", "model", "source"):
+            for key in ("input", "output", "output_dir", "model", "source", "manifest", "axes", "unmatched_output"):
                 value = args.get(key)
                 if isinstance(value, str) and Path(value).expanduser().resolve() == artifact:
                     raise CadError("OUTPUT_CONFLICT", "Result JSON must not replace a drawing or model.")
@@ -413,8 +601,16 @@ def execute_request(request):
             from .output import validate_result_destination
             validate_result_destination(artifact, args.get("overwrite_result_file", False))
         # Third-party diagnostics must not corrupt the JSON transport.
-        with redirect_stdout(sys.stderr):
-            result = dispatch(command, args.copy())
+        import os
+        previous_cache_dir = os.environ.get("TCAD_CACHE_DIR")
+        try:
+            with redirect_stdout(sys.stderr):
+                result = dispatch(command, args.copy())
+        finally:
+            if previous_cache_dir is None:
+                os.environ.pop("TCAD_CACHE_DIR", None)
+            else:
+                os.environ["TCAD_CACHE_DIR"] = previous_cache_dir
         response = {
             "schema_version": PROTOCOL_VERSION,
             "id": request_id,

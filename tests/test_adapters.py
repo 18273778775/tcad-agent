@@ -295,5 +295,5 @@ def test_render_empty_or_unknown_layout_is_structured(tmp_path):
     assert not target.exists()
 
 
-def test_non_svg_render_is_explicitly_unsupported(dxf_file, tmp_path):
-    _error("UNSUPPORTED_FORMAT", render_drawing, dxf_file, tmp_path / "preview.png")
+def test_pdf_render_is_explicitly_unsupported(dxf_file, tmp_path):
+    _error("UNSUPPORTED_FORMAT", render_drawing, dxf_file, tmp_path / "preview.pdf")

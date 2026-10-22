@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tcad-agent"
-version = "0.2.0"
+version = "0.3.0"
 description = "Headless, JSON-first 2D CAD CLI for agents"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{name = "LiTao"}]
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md"]
-dependencies = ["ezdxf==1.4.3", "jsonschema>=4.23,<5", "Pillow>=10,<13", "trimesh>=5.1.1,<6", "psutil>=5.9,<8"]
+dependencies = ["ezdxf==1.4.3", "jsonschema>=4.23,<5", "Pillow>=10,<13", "trimesh>=5.1.1,<6", "psutil>=5.9,<8", "shapely==2.1.2", "resvg_py==0.5.0"]
 
 [project.urls]
 Homepage = "https://github.com/18273778775/tcad-agent"

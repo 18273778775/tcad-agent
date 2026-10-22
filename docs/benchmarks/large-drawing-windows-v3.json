@@ -1,0 +1,155 @@
+{
+  "schema_version": "large-drawing-benchmark-1",
+  "entity_count": 100000,
+  "source_bytes": 27598152,
+  "generation_seconds": 11.862980999998399,
+  "environment": {
+    "platform": "Windows-10-10.0.19045-SP0",
+    "python": "3.12.13",
+    "cpu_count": 16
+  },
+  "scenarios": [
+    {
+      "scenario": "cold",
+      "seconds": [
+        25.237950800001272
+      ],
+      "p50_seconds": 25.237950800001272,
+      "max_seconds": 25.237950800001272,
+      "response_bytes": [
+        5090
+      ],
+      "returned": [
+        100
+      ],
+      "matched_total": 100000,
+      "peak_rss_bytes": 221081600,
+      "read_document_calls": 1,
+      "record_calls": 0
+    },
+    {
+      "scenario": "warm_pages",
+      "seconds": [
+        0.04907660000026226,
+        0.017747800004144665,
+        0.017719399998895824,
+        0.01721400000678841,
+        0.02434299999731593,
+        0.01637690000643488,
+        0.0159055999974953,
+        0.016784800005552825,
+        0.017643699997279327,
+        0.01606339999852935
+      ],
+      "p50_seconds": 0.01742885000203387,
+      "max_seconds": 0.04907660000026226,
+      "response_bytes": [
+        5100,
+        5189,
+        5189,
+        5189,
+        5189,
+        5189,
+        5189,
+        5189,
+        5191,
+        5191
+      ],
+      "returned": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "matched_total": 100000,
+      "peak_rss_bytes": 62857216,
+      "read_document_calls": 0,
+      "record_calls": 0
+    },
+    {
+      "scenario": "filter",
+      "seconds": [
+        0.4136292000039248
+      ],
+      "p50_seconds": 0.4136292000039248,
+      "max_seconds": 0.4136292000039248,
+      "response_bytes": [
+        5140
+      ],
+      "returned": [
+        100
+      ],
+      "matched_total": 5000,
+      "peak_rss_bytes": 65101824,
+      "read_document_calls": 0,
+      "record_calls": 0
+    },
+    {
+      "scenario": "projected_geometry",
+      "seconds": [
+        6.8577449999938835
+      ],
+      "p50_seconds": 6.8577449999938835,
+      "max_seconds": 6.8577449999938835,
+      "response_bytes": [
+        6916
+      ],
+      "returned": [
+        100
+      ],
+      "matched_total": 5000,
+      "peak_rss_bytes": 221560832,
+      "read_document_calls": 1,
+      "record_calls": 5000
+    },
+    {
+      "scenario": "bounded",
+      "seconds": [
+        0.03532389999600127
+      ],
+      "p50_seconds": 0.03532389999600127,
+      "max_seconds": 0.03532389999600127,
+      "response_bytes": [
+        2689
+      ],
+      "returned": [
+        46
+      ],
+      "matched_total": 100000,
+      "peak_rss_bytes": 62689280,
+      "read_document_calls": 0,
+      "record_calls": 0
+    }
+  ],
+  "checks": {
+    "entities_at_least_100k": true,
+    "source_at_least_20mib": true,
+    "cold_within_budget": true,
+    "warm_pages_within_budget": true,
+    "all_rss_measured": true,
+    "all_rss_within_budget": true,
+    "warm_does_not_parse_or_format_source": true,
+    "filter_formats_only_matches": true,
+    "stdout_results_bounded": true,
+    "filter_matches_expected_count": true,
+    "geometry_projection_formats_all_matches": true
+  },
+  "thresholds": {
+    "cold_max_seconds": 180,
+    "warm_page_max_seconds": 1,
+    "peak_rss_max_mib": 1024
+  },
+  "passed": true,
+  "acceptance_revision": {
+    "version": "metadata-filter-gate-2",
+    "date": "2026-10-22",
+    "initial_report_sha256": "abd363cbe0a8a60c7e4404770d62a834ccfc7ca3dcf1eceb55d3b290022e9aa2",
+    "explanation": "The initial equality gate incorrectly required metadata-only filtering to format every matching record. Indexed base metadata correctly formats zero records. Revalidation additionally checks the known fixture match count and that geometry projections still format every match. No workload was rerun and no timing or memory measurements were changed."
+  }
+}

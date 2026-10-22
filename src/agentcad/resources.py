@@ -22,10 +22,11 @@ def _limits(request):
     args = request.get("args", {}) if isinstance(request, dict) else {}
     if not isinstance(args, dict):
         args = {}
-    seconds = args.get("timeout_seconds", 600 if request.get("command") == "setup-dwg" else 60)
+    seconds = args.get("timeout_seconds", 1800 if request.get("command") == "split" else
+                       600 if request.get("command") == "setup-dwg" else 60)
     memory = args.get("max_memory_mb", 1024)
     budget = args.get("max_output_bytes", DEFAULT_OUTPUT_BYTES)
-    for value, low, high, name in [(seconds, 0.1, 600, "timeout_seconds"),
+    for value, low, high, name in [(seconds, 0.1, 1800, "timeout_seconds"),
                                     (memory, 64, 16384, "max_memory_mb"),
                                     (budget, 4096, MAX_OUTPUT_BYTES, "max_output_bytes")]:
         if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
@@ -72,6 +73,25 @@ def _cleanup_atomic_temporaries(request, operation):
                     candidate.unlink()
                 except OSError:
                     pass
+    # A split stages a complete, new directory. Only this worker's UUID-prefixed
+    # sibling staging directories can be removed after it exits or is killed.
+    value = args.get("output_dir")
+    if isinstance(value, str):
+        import shutil
+        import stat
+
+        parent = Path(value).expanduser().resolve().parent
+        for candidate in parent.glob(f".tcad-{operation}-sheet-*"):
+            try:
+                attributes = candidate.lstat()
+                reparse = getattr(attributes, "st_file_attributes", 0) & getattr(
+                    stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+                if (candidate.is_symlink() or reparse or not candidate.is_dir()
+                        or candidate.resolve().parent != parent):
+                    continue
+                shutil.rmtree(candidate)
+            except OSError:
+                pass
 
 
 def run_request(request, *, _command=None):

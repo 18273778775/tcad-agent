@@ -159,17 +159,19 @@ def _record(entity, fields=None, detail="full", vertex_offset=0, vertex_limit=No
                     "has_more": vertex_offset + returned < total,
                     "next_offset": vertex_offset + returned if vertex_offset + returned < total else None,
                 }
-    elif kind in {"TEXT", "MTEXT"}:
-        raw = entity.dxf.text if kind == "TEXT" else entity.text
+    elif kind in {"TEXT", "MTEXT", "ATTRIB", "ATTDEF"}:
+        raw = entity.text if kind == "MTEXT" else entity.dxf.text
         put("text_length", len(raw))
         put("text", raw)
         put("plain_text", entity.plain_text)
         put("insert", lambda: _point(entity.dxf.insert))
-        put("coordinate_system", "OCS" if kind == "TEXT" else "WCS")
-        if kind == "TEXT":
+        put("coordinate_system", "WCS" if kind == "MTEXT" else "OCS")
+        if kind != "MTEXT":
             put("height", lambda: float(entity.dxf.height))
             put("rotation", lambda: float(entity.dxf.rotation))
             put("extrusion", lambda: _point(entity.dxf.extrusion))
+            if kind in {"ATTRIB", "ATTDEF"}:
+                put("tag", lambda: entity.dxf.tag)
         else:
             put("char_height", lambda: float(entity.dxf.char_height))
             put("width", lambda: float(entity.dxf.get("width", 0) or 0))
@@ -180,6 +182,172 @@ def _record(entity, fields=None, detail="full", vertex_offset=0, vertex_limit=No
         for axis in ("xscale", "yscale", "zscale"):
             put(axis, lambda axis=axis: float(entity.dxf.get(axis, 1)))
         put("coordinate_system", "OCS")
+        put("extrusion", lambda: _point(entity.dxf.extrusion))
+        put("attribute_count", lambda: len(entity.attribs))
+        if "attributes" in wanted:
+            attributes = [
+                _record(attribute, fields=["handle", "type", "tag", "text", "plain_text", "insert", "height"],
+                        vertex_limit=128)
+                for attribute in islice(entity.attribs, 128)
+            ]
+            record["attributes"] = attributes
+            record["attribute_count"] = len(entity.attribs)
+            capped = len(attributes) != len(entity.attribs) or any(a.get("truncation") for a in attributes)
+            undecoded = any(a.get("text_encoding", {}).get("encoding_complete") is False for a in attributes)
+            record["attribute_complete"] = not capped and not undecoded
+            if not record["attribute_complete"]:
+                record.setdefault("truncation", {})["attributes"] = {
+                    "returned": len(attributes), "total": len(entity.attribs), "complete": False,
+                    "reason": "annotation_cap_and_text_encoding" if capped and undecoded else "annotation_cap" if capped else "text_encoding",
+                    "hint": ("At most 128 attached attributes and 1024 characters per string are exposed; inspect the source for remaining evidence. " if capped else "")
+                            + ("Attached attribute text is not fully decoded; inspect child text_encoding. Source bytes are unchanged." if undecoded else ""),
+                }
+        elif "attribute_complete" in wanted:
+            # No attributes were requested; their detail cannot be called complete.
+            record["attribute_complete"] = not entity.attribs
+        block_fields = {
+            "block_base_point", "block_entity_count", "matrix44", "matrix44_convention",
+            "block_entities", "block_complete", "block_coordinate_system", "block_omissions",
+            "block_omission_count", "block_omissions_complete",
+        }
+        if block_fields & wanted:
+            try:
+                block = entity.block()
+            except (AttributeError, KeyError, TypeError, ValueError):
+                block = None
+            total = len(block) if block is not None else None
+            put("block_base_point", lambda: _point(block.block.dxf.base_point) if block is not None else None)
+            put("block_entity_count", total)
+            put("matrix44_convention", "row_vector: [x,y,z,1] @ matrix44; block definition Cartesian coordinates to drawing WCS; includes block base point, scale, rotation, OCS and translation.")
+            put("block_coordinate_system", "Native block definition coordinates. Child WCS/OCS are relative to the definition, not the drawing; convert child OCS to definition Cartesian coordinates before applying matrix44.")
+            if "matrix44" in wanted:
+                try:
+                    record["matrix44"] = [list(row) for row in entity.matrix44().rows()] if block is not None else None
+                except (AttributeError, KeyError, TypeError, ValueError, ArithmeticError):
+                    record["matrix44"] = None
+                    record.setdefault("warnings", []).append("Block transformation is unavailable or invalid.")
+                if entity.mcount > 1:
+                    record.setdefault("warnings", []).append("MINSERT matrix44 describes the first grid cell only; additional grid instances are not expanded.")
+            # Only an explicit field selection can inspect first-level children.
+            # detail=full still returns a native INSERT without block expansion.
+            if fields is not None and "block_entities" in wanted:
+                children = []
+                omissions = []
+                omission_count = 0
+
+                def omit(handle, reason):
+                    nonlocal omission_count
+                    omission_count += 1
+                    if len(omissions) < 8:
+                        omissions.append({"handle": handle, "reason": reason})
+
+                supported = {"LINE", "3DFACE", "CIRCLE", "ARC", "LWPOLYLINE", "POLYLINE",
+                             "TEXT", "MTEXT", "ATTRIB", "ATTDEF", "DIMENSION", "INSERT"}
+                child_fields = sorted(_QUERY_FIELDS - block_fields - {"bounds", "bounds_kind"})
+                if block is None:
+                    omit(None, "Block definition is unavailable.")
+                else:
+                    if block.block.is_xref or block.block.is_xref_overlay:
+                        omit(None, "External block reference; external drawing content is not resolved.")
+                    if entity.mcount > 1:
+                        omit(None, "MINSERT grid instances are not expanded; matrix44 describes the first grid cell only.")
+                    for child in islice(block, 128):
+                        child_kind = child.dxftype()
+                        if child_kind == "INSERT":
+                            child_record = _record(child, fields=[
+                                "handle", "type", "layer", "color", "name", "insert", "rotation",
+                                "xscale", "yscale", "zscale", "extrusion", "coordinate_system",
+                            ], vertex_limit=128)
+                            omit(child.dxf.handle, "Nested INSERT retained as native reference; its definition is not expanded.")
+                        else:
+                            child_record = _record(child, fields=child_fields, vertex_limit=128)
+                            if child_kind not in supported:
+                                omit(child.dxf.handle, f"Unsupported child geometry: {child_kind}.")
+                            elif child_record.get("truncation") or child_record.get("geometry_page", {}).get("has_more"):
+                                omit(child.dxf.handle, "Child native detail is truncated; inspect its truncation/geometry_page.")
+                            elif child_record.get("text_encoding"):
+                                omit(child.dxf.handle, "Child contains undecodable text; inspect its text_encoding evidence.")
+                        children.append(child_record)
+                    if len(children) < total:
+                        omit(None, "Only the first 128 native block children are exposed; child pagination is unavailable.")
+                record.update(block_entities=children, block_entity_count=total,
+                              block_complete=not omission_count,
+                              block_omissions=omissions, block_omission_count=omission_count,
+                              block_omissions_complete=omission_count == len(omissions))
+                record["block_coordinate_system"] = "Native block definition coordinates. Child WCS/OCS are relative to the definition, not the drawing; convert child OCS to definition Cartesian coordinates before applying matrix44."
+            elif "block_complete" in wanted:
+                record["block_complete"] = block is not None and total == 0
+                if not record["block_complete"]:
+                    record["block_omissions"] = [{"handle": None, "reason": "Block child detail was not explicitly requested or its definition is unavailable."}]
+                    record["block_omission_count"] = 1
+                    record["block_omissions_complete"] = True
+    elif kind == "DIMENSION":
+        # get_measurement() is a geometric value, not rendered dimension text.
+        # ezdxf returns unscaled linear WCS units, degrees for angular types,
+        # and a WCS displacement vector for ordinate dimensions.
+        warnings = []
+
+        def optional(name, transform=None):
+            try:
+                value = entity.dxf.get(name)
+                value = transform(value) if value is not None and transform else value
+                numbers = value if isinstance(value, list) else [value]
+                if any(isinstance(v, float) and not math.isfinite(v) for v in numbers):
+                    raise ValueError()
+                return value
+            except (AttributeError, TypeError, ValueError, ArithmeticError):
+                warnings.append(f"Dimension field {name} is unavailable or invalid.")
+                return None
+
+        dimtype = int(entity.dimtype)
+        put("dimension_type", dimtype)
+        put("dimension_type_raw", lambda: int(entity.dxf.dimtype))
+        for name in ("defpoint", "defpoint2", "defpoint3", "defpoint4", "defpoint5"):
+            put(name, lambda name=name: optional(name, _point))
+        put("coordinate_system", "WCS")
+        put("defpoint5_coordinate_system", "OCS")
+        put("actual_measurement", lambda: optional("actual_measurement", float))
+        put("text_override", lambda: optional("text"))
+        put("dimstyle", lambda: optional("dimstyle"))
+        put("geometry_block", lambda: optional("geometry"))
+        put("angle", lambda: optional("angle", float))
+        if "dimlfac" in wanted:
+            try:
+                factor = float(entity.override().get("dimlfac", 1.0))
+                if not math.isfinite(factor):
+                    raise ValueError()
+                record["dimlfac"] = factor
+            except (AttributeError, TypeError, ValueError, ArithmeticError):
+                record["dimlfac"] = None
+                warnings.append("Effective dimlfac could not be resolved from the dimension style and overrides.")
+        if {"measurement", "measure_kind"} & wanted:
+            kinds = {0: "linear_distance", 1: "linear_distance", 2: "angular_degrees",
+                     3: "diameter", 4: "radius", 5: "angular_degrees", 6: "ordinate_vector_wcs"}
+            required = {0: ("defpoint2", "defpoint3"), 1: ("defpoint2", "defpoint3"),
+                        2: ("defpoint", "defpoint2", "defpoint3", "defpoint4"),
+                        3: ("defpoint", "defpoint4"), 4: ("defpoint", "defpoint4"),
+                        5: ("defpoint2", "defpoint3", "defpoint4"), 6: ("defpoint", "defpoint2")}
+            measurement = None
+            measure_kind = kinds.get(dimtype, "unsupported")
+            try:
+                if dimtype not in required or any(not entity.dxf.hasattr(name) for name in required[dimtype]):
+                    raise ValueError()
+                value = entity.get_measurement()
+                measurement = _point(value) if isinstance(value, Vec3) else float(value)
+                values = measurement if isinstance(measurement, list) else [measurement]
+                if not all(math.isfinite(v) for v in values):
+                    measurement = None
+                    raise ValueError()
+            except (AttributeError, TypeError, ValueError, ArithmeticError):
+                warnings.append("Geometry measurement is unavailable: unsupported type, missing definition points, or degenerate geometry.")
+                if dimtype in kinds:
+                    measure_kind = "unavailable"
+            put("measurement", measurement)
+            put("measure_kind", measure_kind)
+        if {"measurement", "measure_kind", "actual_measurement", "dimlfac", "text_override"} & wanted:
+            warnings.append("measurement is derived from definition geometry without dimlfac scaling; actual_measurement is stored group 42 and may be stale. text_override and style formatting can differ from both; rendered display text is not evaluated.")
+        if warnings:
+            record["warnings"] = warnings
     if "bounds" in wanted or "bounds_kind" in wanted:
         extent = None if kind == "INSERT" else _bounds(entity)
         put("bounds", extent)
@@ -197,6 +365,7 @@ def _record(entity, fields=None, detail="full", vertex_offset=0, vertex_limit=No
 
 
 def inspect_drawing(path, layout="Model", include_bounds=True):
+    import re
     from .io import file_sha256
     before_sha = file_sha256(path) if Path(path).is_file() else None
     doc = read_document(path)
@@ -210,22 +379,50 @@ def inspect_drawing(path, layout="Model", include_bounds=True):
         )
     if file_sha256(path) != before_sha:
         raise CadError("SOURCE_CHANGED", "Source changed while drawing information was being read.")
+    references = Counter(e.dxf.name for e in space if e.dxftype() == "INSERT")
+    definitions = []
+    for block in doc.blocks:
+        if len(definitions) < 128:
+            definitions.append({"name": block.name, "entity_count": len(block),
+                                "native_reference_count": references[block.name],
+                                "external_reference": bool(block.block.is_xref)})
+    unit_annotations = []
+    unit_pattern = re.compile(r"(?:单位|尺寸|标高).{0,40}(?:毫米|厘米|米|mm|cm|m)|\b(?:millimetres?|millimeters?|centimetres?|meters?|metres?)\b", re.I)
+    unit_matches = 0
+    for entity in space:
+        if entity.dxftype() not in {"TEXT", "MTEXT", "ATTRIB", "ATTDEF"}:
+            continue
+        label = entity.plain_text()
+        if unit_pattern.search(label):
+            unit_matches += 1
+            if len(unit_annotations) < 16:
+                unit_annotations.append({"handle": entity.dxf.handle, "layer": entity.dxf.layer,
+                                         "text": label[:240], "text_complete": len(label) <= 240})
     return {
         "path": str(Path(path).expanduser().resolve()),
         "source_sha256": before_sha,
         "dxf_version": doc.dxfversion,
         "units": _units(doc),
+        "unit_evidence": {"metadata": "$INSUNITS", "annotations": unit_annotations,
+                          "annotation_count": unit_matches, "complete": unit_matches <= 16,
+                          "interpretation": "Annotation candidates are evidence for review; physical units are never inferred or rescaled automatically."},
         "layout": space.name,
         "layouts": list(doc.layouts.names()),
         "entity_count": len(entities),
         "entity_types": dict(sorted(Counter(e.dxftype() for e in entities).items())),
         "entity_layers": dict(sorted(Counter(e.dxf.get("layer", "0") for e in entities).items())),
+        "blocks": {"definition_count": len(doc.blocks), "native_reference_count": sum(references.values()),
+                   "definitions": definitions, "definitions_complete": len(doc.blocks) <= 128,
+                   "scope": "native layout references; nested references are not counted as native instances"},
         "layers": [
             {
                 "name": layer.dxf.name,
                 "color": int(layer.dxf.color),
                 "off": bool(layer.is_off()),
                 "frozen": bool(layer.is_frozen()),
+                "linetype": layer.dxf.get("linetype", "Continuous"),
+                "lineweight": int(layer.dxf.get("lineweight", -3)),
+                "plot": bool(layer.dxf.get("plot", 1)),
             }
             for layer in doc.layers
         ],
@@ -244,6 +441,7 @@ def inspect_drawing(path, layout="Model", include_bounds=True):
 def export_entities(
     path, output, layout="Model", types=None, layer=None, handles=None, fields=None,
     max_entities=100000, max_bytes=64 * 1024 * 1024, overwrite=False,
+    layers=None, exclude_layers=None, bbox=None, expected_source_revision=None,
 ):
     """Write complete selected native entity records as bounded, atomic JSONL.
 
@@ -274,6 +472,10 @@ def export_entities(
                        {"available": sorted(_QUERY_FIELDS)})
     selected_handles = None if handles is None else set(_validate_handles(handles, allow_empty=True))
     selected_types = None if types is None else {kind.upper() for kind in types}
+    for value in (layers, exclude_layers):
+        if value is not None and (not isinstance(value, list) or any(not isinstance(v, str) or not v for v in value)):
+            raise CadError("INVALID_ARGUMENT", "Layers must be lists of nonempty layer names.")
+    selection = None
     target = Path(output).expanduser().resolve()
     if target.suffix.lower() not in {".jsonl", ".ndjson"}:
         raise CadError("UNSUPPORTED_FORMAT", "Entity export requires .jsonl or .ndjson output.")
@@ -283,8 +485,22 @@ def export_entities(
     with revision_guard(path, target):
         # Atomic output checks no-clobber before opening/parsing the input.
         with atomic_output(target, overwrite=overwrite) as temporary:
+            if bbox is not None or layers is not None or exclude_layers is not None or expected_source_revision is not None:
+                from .spatial import select_handles
+                selection = select_handles(path, layout=layout, types=types, layer=layer, handles=handles,
+                                           layers=layers, exclude_layers=exclude_layers, bbox=bbox,
+                                           expected_source_revision=expected_source_revision)
+                selected_handles = set(selection["handles"])
             doc = read_document(path)
             space = _layout(doc, layout)
+            export_bounds = None
+            if fields is None or set(fields) & {"bounds", "bounds_kind", "world_bbox"}:
+                if selection is not None:
+                    export_bounds = {row["handle"]: row["world_bbox"] for row in selection["entities"]}
+                else:
+                    from .spatial import entity_bounds
+                    native_bounded, _, _ = entity_bounds(space)
+                    export_bounds = {entity.dxf.handle: extent for entity, extent in native_bounded}
             with temporary.open("wb") as stream:
                 for entity in space:
                     kind = entity.dxftype()
@@ -308,6 +524,19 @@ def export_entities(
                                            {"max_bytes": max_bytes, "entity_handle": entity.dxf.handle,
                                             "minimum_geometry_bytes": minimum})
                     record = _record(entity, fields=fields, detail="full", vertex_limit=None)
+                    if export_bounds is not None:
+                        extent = export_bounds.get(entity.dxf.handle)
+                        if fields is None or "bounds" in fields:
+                            record["bounds"] = {"min": extent[:2], "max": extent[2:]} if extent else None
+                        if fields is None or "bounds_kind" in fields:
+                            record["bounds_kind"] = "conservative_wcs_2d" if extent else "unavailable"
+                    if fields is not None and set(fields) & {"entity_key", "instance_path", "root_handle", "scope", "visible", "world_bbox"}:
+                        from .spatial import entity_visible
+                        identity = {"entity_key": entity.dxf.handle, "instance_path": [],
+                                    "root_handle": entity.dxf.handle, "scope": "layout", "visible": entity_visible(entity)}
+                        if "world_bbox" in fields:
+                            identity["world_bbox"] = export_bounds.get(entity.dxf.handle)
+                        record.update({key: value for key, value in identity.items() if key in fields})
                     for chunk in encoder.iterencode(record):
                         block = chunk.encode("utf-8")
                         if size + len(block) + 1 > max_bytes:
@@ -323,9 +552,12 @@ def export_entities(
                     count += 1
                 if count == 0:
                     raise CadError("EMPTY_SELECTION", "No native entities match the export selection; no file was published.")
-    return {"output": str(target), "entity_count": count, "bytes": size,
+    result = {"output": str(target), "entity_count": count, "bytes": size,
             "sha256": digest.hexdigest(), "format": "jsonl", "layout": layout,
             "warnings": ["Native supported query records only; INSERTs and unsupported entity geometry are not expanded."]}
+    if selection is not None:
+        result["selection"] = {key: value for key, value in selection.items() if key not in {"handles", "entities"}}
+    return result
 
 
 
@@ -350,6 +582,8 @@ def _selected_entities(doc, space, handles):
 
 
 def _polyline_measure(points, bulges, closed):
+    repeated_endpoint = not closed and len(points) >= 4 and points[0][:2] == points[-1][:2]
+    closed = closed or repeated_endpoint
     lengths = []
     areas = []
     origin_x, origin_y = points[0][:2] if points else (0.0, 0.0)
@@ -379,8 +613,10 @@ def _polyline_measure(points, bulges, closed):
             area_kind="absolute_algebraic_area_in_entity_plane",
         )
         result["warnings"] = [
-            "Closed-polyline area is the absolute signed integral; self-intersections are not resolved into a union area."
+            "Area is the individual entity integral; overlaps with other entities are counted separately."
         ]
+        if repeated_endpoint:
+            result["warnings"].append("Closure uses exactly repeated first and last XY coordinates; no gap tolerance was applied.")
     else:
         result.update(area=None, area_kind="not_defined_for_open_polyline")
     return result
@@ -468,15 +704,48 @@ def _measure(entity):
             area=None,
             reason=f"Measurement is unsupported for {kind}.",
         )
+    from .geometry import measurement_extension
+    extension = measurement_extension(entity)
+    if extension is not None:
+        supplement = dict(extension)
+        extra_warnings = supplement.pop("warnings", [])
+        result.update(supplement)
+        if extra_warnings:
+            result.setdefault("warnings", []).extend(extra_warnings)
+        if result.get("supported") and "reason" in result:
+            del result["reason"]
     return jsonable(result)
 
 
-def measure_entities(path, handles, layout="Model"):
+def measure_entities(path, handles=None, layout="Model", types=None, layer=None,
+                     layers=None, exclude_layers=None, bbox=None, max_entities=100000,
+                     expected_source_revision=None):
+    if type(max_entities) is not int or not 1 <= max_entities <= 1000000:
+        raise CadError("INVALID_ARGUMENT", "max_entities must be 1..1000000.")
+    from .query_cache import _source
+    source_revision = _source(path)[1]
+    selection = None
+    if handles is None or any(value is not None for value in (types, layer, layers, exclude_layers, bbox, expected_source_revision)):
+        from .spatial import select_handles
+        selection = select_handles(path, layout=layout, types=types, layer=layer, handles=handles,
+                                   layers=layers, exclude_layers=exclude_layers, bbox=bbox,
+                                   expected_source_revision=expected_source_revision)
+        handles = selection["handles"]
+        if not handles:
+            raise CadError("EMPTY_SELECTION", "No native entities match the measurement selection.")
+    if len(handles) > max_entities:
+        raise CadError("MEASURE_ENTITY_LIMIT", "Selection exceeds measurement entity budget.",
+                       {"max_entities": max_entities, "selected_count": len(handles)})
     doc = read_document(path)
     space = _layout(doc, layout)
     measurements = [_measure(e) for e in _selected_entities(doc, space, handles)]
     incomplete = [item["handle"] for item in measurements if item.get("length") is None]
-    return {
+    invalid_areas = [item["handle"] for item in measurements if item.get("area_kind") == "invalid_boundary"
+                     or item.get("closed") and item.get("area_valid") is False]
+    incomplete_areas = [item["handle"] for item in measurements if item.get("area") is None
+                        and (not item.get("supported") or item.get("closed") or item.get("area_kind") in
+                             {"unsupported_3d_polyline_area", "invalid_boundary"})]
+    result = {
         "measurements": measurements,
         "layout": space.name,
         "units": _units(doc),
@@ -486,12 +755,21 @@ def measure_entities(path, handles, layout="Model"):
             "area": sum(item.get("area") or 0 for item in measurements),
             "area_kind": "sum_of_available_entity_areas_overlaps_counted_separately",
             "area_entity_count": sum(item.get("area") is not None for item in measurements),
+            "area_complete": not incomplete_areas,
+            "invalid_area_count": len(invalid_areas),
         },
         "unsupported_handles": incomplete,
+        "invalid_area_handles": invalid_areas,
+        "incomplete_area_handles": incomplete_areas,
         "warnings": [
             "Lengths use drawing units; areas use squared drawing units. Entity areas are summed without Boolean union."
         ],
     }
+    if selection is not None:
+        result["selection"] = {key: value for key, value in selection.items() if key not in {"handles", "entities"}}
+    if _source(path)[1] != source_revision:
+        raise CadError("SOURCE_CHANGED", "Source changed during measurement.")
+    return result
 
 
 def _ensure_layer(doc, name, color=7):

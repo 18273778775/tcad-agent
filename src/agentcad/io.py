@@ -244,25 +244,88 @@ def validate_finite_entity(entity, dxf_version):
 
 
 def jsonable(value):
-    if value is None or isinstance(value, (str, bool, int)):
-        return value
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            raise CadError("NON_FINITE_RESULT", "Geometry contains a non-finite coordinate.")
-        return value
-    if isinstance(value, dict):
-        return {str(key): jsonable(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [jsonable(item) for item in value]
-    if isinstance(value, Path):
-        return str(value)
-    if isinstance(value, Enum):
-        return jsonable(value.value)
-    if hasattr(value, "tolist"):
-        return jsonable(value.tolist())
-    try:
-        return [jsonable(item) for item in value]
-    except TypeError as exc:
-        raise CadError(
-            "SERIALIZATION_ERROR", f"Unsupported result type: {type(value).__name__}"
-        ) from exc
+    """Convert CAD results to finite JSON, retaining undecodable text evidence.
+
+    ezdxf uses surrogateescape for undecodable legacy DXF bytes. Such codepoints
+    cannot be encoded as UTF-8/SQLite text. Expose each as a literal ``\\udcXX``
+    escape, with bounded provenance on a dictionary result. Strict request JSON
+    validation remains separate and continues to reject all surrogates.
+    """
+    issues = []
+    issue_count = 0
+    issue_limit = 4
+
+    def safe_text(text, path):
+        nonlocal issue_count
+        if not any(0xD800 <= ord(character) <= 0xDFFF for character in text):
+            return text
+        chunks = []
+        escaped_index = 0
+        for index, character in enumerate(text):
+            codepoint = ord(character)
+            if 0xD800 <= codepoint <= 0xDFFF:
+                escaped = f"\\u{codepoint:04x}"
+                issue_count += 1
+                if len(issues) < issue_limit:
+                    issue = {
+                        "path": path[:128] or "/", "path_complete": len(path) <= 128,
+                        "original_character_index": index, "escaped_character_index": escaped_index,
+                        "codepoint": f"U+{codepoint:04X}", "escape": escaped,
+                    }
+                    if 0xDC80 <= codepoint <= 0xDCFF:
+                        issue["byte_escape"] = f"\\x{codepoint - 0xDC00:02x}"
+                    issues.append(issue)
+                chunks.append(escaped)
+                escaped_index += len(escaped)
+            else:
+                chunks.append(character)
+                escaped_index += 1
+        return "".join(chunks)
+
+    def convert(item, path):
+        if item is None or isinstance(item, (bool, int)):
+            return item
+        if isinstance(item, str):
+            return safe_text(item, path)
+        if isinstance(item, float):
+            if not math.isfinite(item):
+                raise CadError("NON_FINITE_RESULT", "Geometry contains a non-finite coordinate.")
+            return item
+        if isinstance(item, dict):
+            result = {}
+            for key, child in item.items():
+                key = str(key)
+                # JSON Pointer paths escape ~ and /; invalid key codepoints are
+                # represented literally before they can enter diagnostics.
+                pointer = key.encode("utf-8", "backslashreplace").decode("utf-8").replace("~", "~0").replace("/", "~1")
+                field_path = path + "/" + pointer
+                safe_key = safe_text(key, field_path + "/@key")
+                if safe_key in result:
+                    raise CadError("TEXT_ENCODING_KEY_COLLISION", "Escaping undecodable CAD text would merge distinct object keys.")
+                result[safe_key] = convert(child, field_path)
+            return result
+        if isinstance(item, (list, tuple)):
+            return [convert(child, path + "/" + str(index)) for index, child in enumerate(item)]
+        if isinstance(item, Path):
+            return safe_text(str(item), path)
+        if isinstance(item, Enum):
+            return convert(item.value, path)
+        if hasattr(item, "tolist"):
+            return convert(item.tolist(), path)
+        try:
+            return [convert(child, path + "/" + str(index)) for index, child in enumerate(item)]
+        except TypeError as exc:
+            raise CadError("SERIALIZATION_ERROR", f"Unsupported result type: {type(item).__name__}") from exc
+
+    result = convert(value, "")
+    if issues and isinstance(result, dict):
+        metadata = {
+            "encoding_complete": False, "representation": "literal_backslash_u_escape",
+            "issue_count": issue_count, "issues_returned": len(issues),
+            "issues_complete": issue_count == len(issues), "issues": issues,
+            "warning": "Undecodable CAD text is escaped, not decoded; literal escape text is distinguished by these field paths and character indices. Source bytes are unchanged.",
+        }
+        if "text_encoding" in result:
+            metadata["previous_metadata"] = result["text_encoding"]
+        result["text_encoding"] = metadata
+    return result

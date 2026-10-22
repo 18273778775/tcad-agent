@@ -14,6 +14,13 @@ own packages; their license and copyright files remain in those distributions.
 | [Pillow](https://github.com/python-pillow/Pillow/blob/main/LICENSE) | MIT-CMU | Image/font support used by rendering |
 | [jsonschema](https://github.com/python-jsonschema/jsonschema/blob/main/COPYING) | MIT | Declarative command and editing-plan validation |
 | [psutil](https://github.com/giampaolo/psutil/blob/master/LICENSE) | BSD-3-Clause | Supervised worker and descendant process memory accounting |
+| [Shapely](https://github.com/shapely/shapely/blob/main/LICENSE.txt) | BSD-3-Clause | Planar boundary validation, spatial association and Boolean union |
+| [resvg-py](https://github.com/baseplate-admin/resvg-py/blob/main/LICENSE) | MIT | Code-only SVG to PNG rendering; no browser screenshots |
+
+Shapely binary wheels include GEOS, licensed under LGPL-2.1. resvg-py uses
+resvg/usvg (Apache-2.0 OR MIT) and Rust dependencies under their own terms.
+Their package license notices must be retained; the TCAD license does not
+relicense those libraries. TCAD does not bundle CAD fonts or linked images.
 
 Transitive and development dependencies, including NumPy, fontTools, pyparsing,
 typing_extensions, attrs, referencing, rpds-py, pytest and Ruff, retain their

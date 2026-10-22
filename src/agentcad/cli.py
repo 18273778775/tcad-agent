@@ -52,15 +52,30 @@ def parser():
         if name == "info":
             sub.add_argument("--bounds", dest="include_bounds", action="store_true")
         if name == "measure":
-            sub.add_argument("--handle", dest="handles", action="append", required=True)
+            sub.add_argument("--handle", dest="handles", action="append")
+            sub.add_argument("--type", dest="types", action="append")
+            sub.add_argument("--layer")
+            sub.add_argument("--bbox", nargs=4, type=float)
+            sub.add_argument("--max-entities", type=int, default=100000)
         if name == "render":
-            sub.add_argument("--output", required=True)
+            sub.add_argument("--output")
+            sub.add_argument("--output-dir")
             sub.add_argument("--overwrite", action="store_true")
             sub.add_argument("--type", dest="types", action="append")
             sub.add_argument("--layer")
             sub.add_argument("--handle", dest="handles", action="append")
             sub.add_argument("--max-entities", type=int, default=20000)
             sub.add_argument("--max-svg-bytes", type=int, default=8 * 1024 * 1024)
+            sub.add_argument("--bbox", nargs=4, type=float, help="WCS rectangle to clip and fit")
+            sub.add_argument("--background", choices=["white", "black", "layout"], default="white")
+            sub.add_argument("--foreground", choices=["cad", "monochrome"], default="cad")
+            sub.add_argument("--hatch-mode", choices=["adaptive", "accurate"], default="adaptive")
+            sub.add_argument("--lineweight-scale", type=float, default=1.0)
+            sub.add_argument("--font-family", help="Installed font family for outline text")
+            sub.add_argument("--annotate", choices=["labels", "areas", "axes"])
+            sub.add_argument("--legend", action="store_true")
+            sub.add_argument("--max-annotations", type=int, default=200)
+            sub.add_argument("--width", type=int, default=1600, help="PNG longest side, 16..4096 pixels")
         if name == "export":
             sub.add_argument("--output", required=True)
             sub.add_argument("--overwrite", action="store_true")
@@ -69,6 +84,94 @@ def parser():
             sub.add_argument("--handle", dest="handles", action="append")
             sub.add_argument("--max-entities", type=int, default=100000)
             sub.add_argument("--max-bytes", type=int, default=64 * 1024 * 1024)
+            sub.add_argument("--bbox", nargs=4, type=float)
+        if name in {"query", "measure", "render", "export"}:
+            sub.add_argument("--layers", nargs="+", help="Layer whitelist; render resolves nested layer-0 inheritance")
+            sub.add_argument("--exclude-layers", nargs="+")
+            sub.add_argument("--sheet", help="Sheet id or exact title; render also accepts all")
+            sub.add_argument("--manifest", help="Reuse a source-SHA-validated sheet manifest")
+        if name in {"query", "measure", "export"}:
+            sub.add_argument("--expected-source-revision")
+        if name == "query":
+            sub.add_argument("--text-scope", choices=["layout", "block", "all"], default="layout")
+    for name in ("sheets", "split"):
+        sub = commands.add_parser(name, help="Discover drawing frames" if name == "sheets"
+                                  else "Split frames to named DXF, SVG and offline HTML")
+        sub.add_argument("input")
+        sub.add_argument("--layout", default="Model")
+        sub.add_argument("--frames", help="JSON array of frame handles or explicit bbox/name/number objects")
+        sub.add_argument("--frame-layer", help="Restrict frame geometry to a specific layer")
+        sub.add_argument("--min-frame-area", type=float, default=10000)
+        sub.add_argument("--max-sheets", type=int, default=200)
+        sub.add_argument("--frame-block-regex")
+        sub.add_argument("--frame-size", help="Frame aspect-ratio hint, e.g. 841x594")
+        sub.add_argument("--title-layer")
+        sub.add_argument("--title-regex", help="May capture title, number, building, elevation_range, kind")
+        sub.add_argument("--number-layer")
+        sub.add_argument("--shared-frame", choices=["largest", "split"], default="largest")
+        sub.add_argument("--names", help="JSON mapping of sheet/frame ids to name overrides")
+        if name == "sheets":
+            sub.add_argument("--output", help="Write full discovery JSON and return a compact receipt")
+            sub.add_argument("--overwrite", action="store_true")
+        else:
+            sub.add_argument("--output-dir", required=True, help="New directory; existing destinations are refused")
+            sub.add_argument("--no-preview", dest="preview", action="store_false", default=True)
+            sub.add_argument("--no-thumbnail", dest="thumbnail", action="store_false", default=True)
+            sub.add_argument("--thumbnail-width", type=int, default=1280)
+            sub.add_argument("--max-entities", type=int, default=100000)
+            sub.add_argument("--max-svg-bytes", type=int, default=64 * 1024 * 1024)
+            sub.add_argument("--max-total-bytes", type=int, default=512 * 1024 * 1024)
+            sub.add_argument("--foreground", choices=["cad", "monochrome"])
+            sub.add_argument("--background", choices=["white", "black", "layout"])
+            sub.add_argument("--hatch-mode", choices=["adaptive", "accurate"])
+            sub.add_argument("--lineweight-scale", type=float)
+            sub.add_argument("--font-family")
+            sub.add_argument("--layers", nargs="+")
+            sub.add_argument("--exclude-layers", nargs="+")
+    for name in ("index", "area", "associate", "axes"):
+        sub = commands.add_parser(name)
+        sub.add_argument("input")
+        sub.add_argument("--layout", default="Model")
+        if name == "index":
+            sub.add_argument("--text-scope", choices=["layout", "block", "all"], default="all")
+            continue
+        sub.add_argument("--sheet")
+        sub.add_argument("--manifest")
+        sub.add_argument("--bbox", nargs=4, type=float)
+        sub.add_argument("--output")
+        sub.add_argument("--overwrite", action="store_true")
+        if name == "area":
+            sub.add_argument("--handle", dest="handles", action="append")
+            sub.add_argument("--layers", nargs="+")
+            sub.add_argument("--type", dest="entity_types", action="append")
+            sub.add_argument("--mode", choices=["union", "sum", "overlap"], default="union")
+            sub.add_argument("--by", choices=["layer", "block", "sheet"])
+            sub.add_argument("--tolerance", type=float, default=0)
+            sub.add_argument("--flatten-tolerance", type=float, default=.1)
+            sub.add_argument("--linear-unit", choices=["mm", "cm", "m", "in", "ft"])
+            sub.add_argument("--make-valid", action="store_true")
+            sub.add_argument("--evidence-limit", type=int, default=100)
+            sub.add_argument("--max-relations", type=int, default=100000)
+        else:
+            sub.add_argument("--label-layers", nargs="+")
+            sub.add_argument("--label-regex")
+            sub.add_argument("--max-distance", type=float, default=500 if name == "associate" else 1000)
+            if name == "associate":
+                sub.add_argument("--target-layers", nargs="+")
+                sub.add_argument("--label-types", nargs="+")
+                sub.add_argument("--target-types", nargs="+")
+                sub.add_argument("--method", choices=["inside", "nearest", "leader"], default="inside")
+                sub.add_argument("--one-to-one", action="store_true")
+                sub.add_argument("--flatten-tolerance", type=float, default=.1)
+                sub.add_argument("--unmatched-output")
+            else:
+                sub.add_argument("--line-layers", nargs="+")
+                sub.add_argument("--bubble-block-regex")
+                sub.add_argument("--tolerance", type=float, default=1)
+                sub.add_argument("--point", nargs=2, type=float)
+                sub.add_argument("--axes", help="Previously saved source-bound axes JSON")
+                sub.add_argument("--max-axes", type=int, default=1000)
+                sub.add_argument("--max-intersections", type=int, default=100000)
     for name in ("new", "apply"):
         sub = commands.add_parser(name)
         sub.add_argument("--output", required=True)
@@ -123,6 +226,7 @@ def parser():
         sub.add_argument("--overwrite-result-file", action="store_true")
         sub.add_argument("--timeout-seconds", type=float)
         sub.add_argument("--max-memory-mb", type=int, default=1024)
+        sub.add_argument("--cache-dir", help="Isolated persistent drawing/index cache")
     return root
 
 
@@ -182,7 +286,7 @@ def main(argv=None):
             return serve()
         if args.get("result_file"):
             target = Path(args["result_file"]).expanduser().resolve()
-            for key in ("file", "plan", "spec", "mapping", "input", "output", "model", "source"):
+            for key in ("file", "plan", "spec", "mapping", "frames", "input", "output", "output_dir", "model", "source"):
                 source = args.get(key)
                 if isinstance(source, str) and source != "-" and Path(source).expanduser().resolve() == target:
                     raise CadError("OUTPUT_CONFLICT", "Result JSON must not replace an input, plan, spec or model.")
@@ -194,6 +298,15 @@ def main(argv=None):
             return 0 if response["ok"] else 1
         if command == "apply":
             args["plan"] = read_json_file(args["plan"])
+        if command in {"sheets", "split"} and args.get("frames"):
+            args["frames"] = read_json_file(args["frames"])
+        if command in {"sheets", "split"} and args.get("names"):
+            args["names"] = read_json_file(args["names"])
+        if command == "split":
+            render_keys = {"foreground", "background", "hatch_mode", "lineweight_scale", "font_family", "layers", "exclude_layers"}
+            render_options = {key: args.pop(key) for key in render_keys if args.get(key) is not None}
+            if render_options:
+                args["render_options"] = render_options
         if command == "room-extract":
             args["mapping"] = read_json_file(args["mapping"])
         if command in {"room-model", "room-verify"}:

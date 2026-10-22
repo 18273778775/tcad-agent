@@ -153,7 +153,7 @@ def finalize_response(response, args=None, command=None):
     selected_omissions = []
     if command == "schema" and (args.get("fields") or args.get("no_provenance")):
         raise CadError("INVALID_ARGUMENT", "Schema contracts cannot be projected or stripped; select a target schema.")
-    if response.get("ok") and args.get("fields") and command != "query":
+    if response.get("ok") and args.get("fields") and command not in {"query", "export"}:
         response["result"] = project_fields(response["result"], args["fields"])
     if response.get("ok") and args.get("no_provenance"):
         response["result"] = _without_provenance(response["result"], selected_omissions)

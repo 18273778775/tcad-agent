@@ -178,7 +178,13 @@ def main():
         "all_rss_measured": all(r["peak_rss_bytes"] > 0 for r in results),
         "all_rss_within_budget": max(r["peak_rss_bytes"] for r in results) <= args.rss_max_mib * 1024 * 1024,
         "warm_does_not_parse_or_format_source": results[1]["read_document_calls"] == results[1]["record_calls"] == 0,
-        "filter_formats_only_matches": results[2]["record_calls"] == results[2]["matched_total"],
+        # Metadata-only filters may be served entirely by indexed base records.
+        # Requiring formatting of every match would reject that optimization.
+        "filter_matches_expected_count": results[2]["matched_total"] == len(range(1, args.entities, 20)),
+        "filter_formats_only_matches": 0 <= results[2]["record_calls"] <= results[2]["matched_total"],
+        "geometry_projection_formats_all_matches": (
+            results[3]["matched_total"] == len(range(1, args.entities, 20))
+            and results[3]["record_calls"] == results[3]["matched_total"]),
         "stdout_results_bounded": all(max(r["response_bytes"]) <= (4096 if r["scenario"] == "bounded" else 32768) for r in results),
     }
     report = {"schema_version": "large-drawing-benchmark-1", "entity_count": args.entities,
