@@ -36,7 +36,27 @@ Existing output requires explicit overwrite. Preserve the source unless the user
 asks to replace it. Batch requests continue after an individual failure; a batch
 is not atomic. DWG editing produces DXF output in this version.
 
-## Mapped room modelling
+## CLI role
+
+Room modelling and spreadsheet takeoff are acceptance workflows composed by the
+calling agent. Core CLI responsibilities are selection, native/coordinate and
+annotation evidence, geometry, edits and reliable previews. Do not describe the
+absence of a general Excel/BIM business engine as a missing CAD primitive.
+
+## Reusable task selections
+
+Prepare related pages once with `workset drawing --manifest sheets.json --sheet
+sheet-041 --sheet sheet-042 --output-dir related`, or use repeated `--bbox`.
+`info/query/index/measure/export/render/area/associate/axes --workset related`
+validate source/subset SHA and operate on the subset, not the original full CAD.
+Query the subset's own handles; the mapping is in workset.json. A source change
+requires regeneration. Worksets retain source WCS/units and whole crossing
+entities; a bbox is not geometric clipping. A sheet plus bbox refines one page.
+`render --workset related --sheet all --output-dir previews` writes an HTML gallery.
+Check preview_quality: strict previews refuse missing/substituted content;
+local resource/font paths can supply real assets but cannot restore lost data.
+
+## Controlled room acceptance adapter
 
 Use `room-extract <drawing> --mapping <map.json> --output <spec.json>`, then
 `room-model --spec <spec.json> --output <model.glb|obj|dxf>` and

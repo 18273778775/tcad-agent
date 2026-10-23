@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_version_and_tool_entrypoints_agree():
     metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
-    assert metadata["version"] == __version__ == "0.3.1"
+    assert metadata["version"] == __version__ == "0.4.0"
     assert metadata["scripts"]["tcad"] == "agentcad.cli:main"
     assert metadata["license"] == "Apache-2.0"
 
@@ -93,7 +93,7 @@ def test_download_rejects_checksum_before_publication(tmp_path):
 def test_wheel_installs_as_isolated_cli(tmp_path):
     uv = shutil.which("uv")
     assert uv, "Distribution CI must explicitly install uv."
-    build = subprocess.run([uv, "build", "--wheel", "--out-dir", str(tmp_path / "dist")], cwd=ROOT, capture_output=True, text=True, timeout=180)
+    build = subprocess.run([uv, "build", "--wheel", "--out-dir", str(tmp_path / "dist")], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=180)
     assert build.returncode == 0, build.stderr
     wheel = next((tmp_path / "dist").glob("*.whl"))
     with zipfile.ZipFile(wheel) as archive:
@@ -104,19 +104,19 @@ def test_wheel_installs_as_isolated_cli(tmp_path):
     environment = os.environ.copy()
     environment.pop("PYTHONPATH", None)
     environment.update(UV_TOOL_DIR=str(tmp_path / "tools"), UV_TOOL_BIN_DIR=str(tmp_path / "bin"), TCAD_DATA_HOME=str(tmp_path / "data"))
-    installed = subprocess.run([uv, "tool", "install", "--python", sys.executable, str(wheel)], cwd=tmp_path, env=environment, capture_output=True, text=True, timeout=240)
+    installed = subprocess.run([uv, "tool", "install", "--python", sys.executable, str(wheel)], cwd=tmp_path, env=environment, capture_output=True, text=True, encoding="utf-8", timeout=240)
     assert installed.returncode == 0, installed.stderr
     command = tmp_path / "bin" / ("tcad.exe" if os.name == "nt" else "tcad")
-    version = subprocess.run([str(command), "--version"], cwd=tmp_path, env=environment, capture_output=True, text=True, timeout=30)
-    assert version.returncode == 0 and "0.3.1" in version.stdout
-    result = subprocess.run([str(command), "capabilities"], cwd=tmp_path, env=environment, capture_output=True, text=True, timeout=30)
+    version = subprocess.run([str(command), "--version"], cwd=tmp_path, env=environment, capture_output=True, text=True, encoding="utf-8", timeout=30)
+    assert version.returncode == 0 and "0.4.0" in version.stdout
+    result = subprocess.run([str(command), "capabilities"], cwd=tmp_path, env=environment, capture_output=True, text=True, encoding="utf-8", timeout=30)
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout)["ok"] is True
     plan = tmp_path / "plan.json"
     plan.write_text(json.dumps({"version": 1, "units": "mm", "operations": [{"op": "add", "entity": {"type": "LINE", "start": [0, 0], "end": [3, 4]}}]}), encoding="utf-8")
     drawing = tmp_path / "installed.dxf"
-    created = subprocess.run([str(command), "apply", "--plan", str(plan), "--output", str(drawing)], cwd=tmp_path, env=environment, capture_output=True, text=True, timeout=60)
+    created = subprocess.run([str(command), "apply", "--plan", str(plan), "--output", str(drawing)], cwd=tmp_path, env=environment, capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert created.returncode == 0, created.stdout + created.stderr
-    queried = subprocess.run([str(command), "query", str(drawing)], cwd=tmp_path, env=environment, capture_output=True, text=True, timeout=60)
+    queried = subprocess.run([str(command), "query", str(drawing)], cwd=tmp_path, env=environment, capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert queried.returncode == 0, queried.stdout + queried.stderr
     assert json.loads(queried.stdout)["ok"] is True

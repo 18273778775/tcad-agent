@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.4.0 — 2026-10-23
+
+- Prepare SHA-verified worksets from related sheets or disjoint regions. Reuse
+  them across analysis commands without decoding the original full drawing;
+  retain WCS, units, root-handle mapping and selection limitations.
+- Reuse the first unchanged document inside one read-only request. Refine a
+  selected sheet with bbox and redraw all workset pages as SVG/PNG/HTML.
+- Actually embed local raster images in SVG, including partial clipping and
+  PNG/split thumbnails. Add bounded resource/font directories, font maps,
+  per-selection quality reports and strict publication checks.
+- Extend annotation evidence to MLEADER and explicitly selected polyline
+  leaders; retain competitors and ambiguity margins. Support rotated straight
+  axes and collinear open polylines, including saved spatial queries.
+- Treat room models and Excel takeoff as agent acceptance workflows using CAD
+  primitives, rather than missing general business engines.
+
+See [0.4.0 release notes](docs/releases/0.4.0.md).
+
 ## 0.3.1 — 2026-10-23
 
 - Fix the Windows pip installer selecting an unrelated global Python launcher

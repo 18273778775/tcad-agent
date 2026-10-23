@@ -22,7 +22,7 @@ def _limits(request):
     args = request.get("args", {}) if isinstance(request, dict) else {}
     if not isinstance(args, dict):
         args = {}
-    seconds = args.get("timeout_seconds", 1800 if request.get("command") == "split" else
+    seconds = args.get("timeout_seconds", 1800 if request.get("command") in {"split", "workset"} else
                        600 if request.get("command") == "setup-dwg" else 60)
     memory = args.get("max_memory_mb", 1024)
     budget = args.get("max_output_bytes", DEFAULT_OUTPUT_BYTES)
@@ -81,7 +81,9 @@ def _cleanup_atomic_temporaries(request, operation):
         import stat
 
         parent = Path(value).expanduser().resolve().parent
-        for candidate in parent.glob(f".tcad-{operation}-sheet-*"):
+        candidates = (candidate for pattern in ("sheet", "workset")
+                      for candidate in parent.glob(f".tcad-{operation}-{pattern}-*"))
+        for candidate in candidates:
             try:
                 attributes = candidate.lstat()
                 reparse = getattr(attributes, "st_file_attributes", 0) & getattr(

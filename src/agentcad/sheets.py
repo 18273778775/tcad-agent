@@ -962,6 +962,8 @@ def _verify_svg(path):
     try:
         root = ElementTree.parse(path).getroot()
         view = [float(v) for v in root.attrib.get("viewBox", "").replace(",", " ").split()]
+        from .thumbnails import validate_static_svg_resources
+        inline_images = validate_static_svg_resources(root)
     except (ElementTree.ParseError, ValueError) as exc:
         return {"ok": False, "reason": "invalid_svg_xml_or_viewbox", "detail": str(exc)[:240]}
     paths = [e for e in root.iter() if e.tag.rsplit("}", 1)[-1] == "path" and e.attrib.get("d", "").strip()]
@@ -976,8 +978,9 @@ def _verify_svg(path):
     raw = path.read_text("utf-8")
     external_css = bool(re.search(r"@import|@font-face|file://", raw, re.I))
     valid = len(view) == 4 and all(math.isfinite(v) for v in view) and view[2] > 0 and view[3] > 0
-    return {"ok": valid and bool(paths) and not external and not external_css,
-            "valid_viewbox": valid, "nonempty": bool(paths), "path_count": len(paths),
+    return {"ok": valid and bool(paths or inline_images) and not external and not external_css,
+            "valid_viewbox": valid, "nonempty": bool(paths or inline_images), "path_count": len(paths),
+            "embedded_png_count": inline_images,
             "self_contained": not external and not external_css,
             "external_reference_count": len(external), "external_reference_samples": external[:4]}
 
@@ -1343,7 +1346,8 @@ def split_drawing(input_path, output_dir, layout="Model", frames=None, frame_lay
     if type(thumbnail_width) is not int or not 16 <= thumbnail_width <= 4096:
         raise CadError("INVALID_ARGUMENT", "thumbnail_width must be between 16 and 4096 pixels.")
     if render_options is not None and (not isinstance(render_options, dict) or set(render_options) - {
-            "foreground", "background", "hatch_mode", "lineweight_scale", "font_family", "layers", "exclude_layers"}):
+            "foreground", "background", "hatch_mode", "lineweight_scale", "font_family", "layers", "exclude_layers",
+            "resource_paths", "font_paths", "font_map", "max_resource_bytes", "strict"}):
         raise CadError("INVALID_ARGUMENT", "render_options contains unsupported SVG preview options.")
     if type(max_entities) is not int or not 1 <= max_entities <= 100000:
         raise CadError("INVALID_ARGUMENT", "max_entities must be between 1 and 100000.")

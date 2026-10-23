@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: 2026 LiTao
 # SPDX-License-Identifier: Apache-2.0
 
-"""Evidence-based label association and orthogonal axis grids, with explicit ambiguity."""
+"""Revision-bound geometric association and straight-axis evidence, without BIM inference."""
 
 from collections import defaultdict
+from bisect import bisect_right
 import json
 import math
 from pathlib import Path
@@ -75,17 +76,21 @@ def _axis_ranges(axis):
 
 
 def _range_covers(axis, value, tolerance):
-    return any(low - tolerance <= value <= high + tolerance for low, high in _axis_ranges(axis))
+    intervals = _axis_ranges(axis)
+    index = bisect_right(intervals, value + tolerance, key=lambda interval: interval[0]) - 1
+    return index >= 0 and intervals[index][1] >= value - tolerance
 
 
 def _validate_saved_grid(result):
     if not isinstance(result, dict):
         raise CadError("INVALID_AXES", "Saved axes must be a JSON object.")
     grid = result.get("axes")
-    if not isinstance(grid, dict) or set(grid) != {"vertical", "horizontal"}:
+    if not isinstance(grid, dict) or not {"vertical", "horizontal"} <= set(grid):
         raise CadError("INVALID_AXES", "Saved axes must contain vertical and horizontal arrays.")
     ids = set()
-    for orientation in ("vertical", "horizontal"):
+    if set(grid) - {"vertical", "horizontal", "oblique"}:
+        raise CadError("INVALID_AXES", "Saved axes contain an unknown orientation.")
+    for orientation in grid:
         values = grid[orientation]
         if not isinstance(values, list) or len(values) > 1000:
             raise CadError(
@@ -104,6 +109,34 @@ def _validate_saved_grid(result):
                     "Saved axes contain an invalid or duplicate axis identity/position.",
                 )
             ids.add(axis["id"])
+            if len(ids) > 1000:
+                raise CadError("INVALID_AXES", "Saved grid exceeds 1000 total axes.")
+            if orientation == "oblique" and any(k not in axis for k in ("origin", "direction")):
+                raise CadError("INVALID_AXES", "Oblique axes require origin and direction.")
+            for key in ("origin", "direction"):
+                if key in axis and (not isinstance(axis[key], (list, tuple))
+                    or len(axis[key]) != 2
+                    or any(type(v) not in (int, float) or not math.isfinite(v)
+                           for v in axis[key])):
+                    raise CadError("INVALID_AXES", "Saved axes contain invalid geometry.")
+            if "direction" in axis and abs(math.hypot(*axis["direction"]) - 1) > 1e-8:
+                raise CadError("INVALID_AXES", "Saved axis direction must be a unit vector.")
+            if ("origin" in axis) != ("direction" in axis):
+                raise CadError("INVALID_AXES", "Axis origin and direction must occur together.")
+            if "origin" in axis:
+                origin, direction = axis["origin"], axis["direction"]
+                frame_tolerance = 1e-6 + math.hypot(*origin) * 1e-12
+                if abs(sum(origin[i] * direction[i] for i in (0, 1))) > frame_tolerance:
+                    raise CadError("INVALID_AXES", "Axis origin must be its perpendicular foot from WCS zero.")
+                if orientation in {"vertical", "horizontal"}:
+                    expected = ([0, 1], [axis["position"], 0]) if orientation == "vertical" else (
+                        [1, 0], [0, axis["position"]])
+                    if any(abs(a - b) > 1e-8 for a, b in zip(list(direction) + list(origin),
+                           expected[0] + expected[1])):
+                        raise CadError("INVALID_AXES", "Orthogonal axis geometry conflicts with its orientation.")
+                elif abs(-direction[1] * origin[0] + direction[0] * origin[1]
+                         - axis["position"]) > frame_tolerance:
+                    raise CadError("INVALID_AXES", "Oblique axis position conflicts with its geometry.")
             if "ranges" in axis and not axis["ranges"]:
                 raise CadError("INVALID_AXES", "Saved axis ranges must not be empty.")
             intervals = (
@@ -119,11 +152,19 @@ def _validate_saved_grid(result):
                 for interval in intervals
             ):
                 raise CadError("INVALID_AXES", "Saved axes contain an invalid range.")
+            ranges = _axis_ranges(axis)
+            if any(ranges[i][0] <= ranges[i - 1][1] for i in range(1, len(ranges))):
+                raise CadError("INVALID_AXES", "Axis ranges must be sorted and disjoint.")
+            if axis["range"] != [ranges[0][0], ranges[-1][1]]:
+                raise CadError("INVALID_AXES", "Axis extent must contain exactly its finite ranges.")
     return grid
 
 
 def _anchor(record):
     entity = record["entity"]
+    if entity.dxftype() in {"MLEADER", "MULTILEADER"}:
+        content = entity.context.mtext
+        return list(content.insert)[:2] if content is not None else None
     if entity.dxftype() in {"TEXT", "ATTRIB", "ATTDEF"}:
         try:
             return list(entity.ocs().to_wcs(entity.get_placement()[1]))[:2]
@@ -137,6 +178,10 @@ def _anchor(record):
 
 def _label(record):
     entity = record["entity"]
+    if entity.dxftype() in {"MLEADER", "MULTILEADER"}:
+        from ezdxf.tools.text import plain_mtext
+
+        return plain_mtext(entity.get_mtext_content())[:2048]
     value = entity.plain_text() if hasattr(entity, "plain_text") else entity.dxf.get("text", "")
     return str(value)[:2048]
 
@@ -150,6 +195,50 @@ def _evidence(record):
         "layer": record["layer"],
         "type": record["entity"].dxftype(),
     }
+
+
+def _polyline_points(entity):
+    """Return native WCS vertices; curved/closed paths are not straight leaders/axes."""
+    if entity.dxftype() == "LWPOLYLINE":
+        if entity.closed or any(abs(p[4]) > 1e-12 for p in entity.get_points("xyseb")):
+            return None
+        return [list(p)[:2] for p in entity.vertices_in_wcs()]
+    if entity.dxftype() == "POLYLINE":
+        if entity.is_closed or not (entity.is_2d_polyline or entity.is_3d_polyline):
+            return None
+        if any(abs(v.dxf.get("bulge", 0)) > 1e-12 for v in entity.vertices):
+            return None
+        return [list(p)[:2] for p in entity.points_in_wcs()]
+    return None
+
+
+def _leader_paths(record, polyline_layers, diagnostics):
+    entity, kind = record["entity"], record["entity"].dxftype()
+    paths = []
+    if kind == "LEADER":
+        points = [list(p)[:2] for p in entity.vertices]
+        if len(points) >= 2:
+            paths.append((points, "native_arrow_first_vertex", entity.dxf.get("annotation_handle")))
+    elif kind in {"MLEADER", "MULTILEADER"}:
+        for leader in entity.context.leaders:
+            for line in leader.lines:
+                points = [list(p)[:2] for p in line.vertices]
+                if len(points) >= 2:
+                    paths.append((points, "native_arrow_first_vertex", record["handle"]))
+    elif polyline_layers is not None and record["layer"] in polyline_layers:
+        points = _polyline_points(entity)
+        if points and len(points) >= 2:
+            # A plain polyline stores no arrow direction. Both endpoint hypotheses
+            # remain explicit and compete; proximity alone is never semantic proof.
+            paths.extend([(points, "polyline_endpoint_hypothesis", None),
+                          (list(reversed(points)), "polyline_endpoint_hypothesis", None)])
+    if not paths:
+        diagnostics.append({**_evidence(record), "reason": "no_supported_open_leader_path"})
+    return [
+        {"record": record, "tip": points[0], "tail": points[-1], "vertices": points,
+         "direction_evidence": direction, "annotation_handle": annotation}
+        for points, direction, annotation in paths
+    ]
 
 
 def _publish(result, output, path, overwrite=False, unmatched_output=None, protected_paths=()):
@@ -244,6 +333,8 @@ def associate_entities(
     document=None,
     roots=None,
     include_hidden=False,
+    leader_layers=None,
+    ambiguity_tolerance=1e-7,
 ):
     """Associate actual text anchors with valid polygons; ties are never silently chosen."""
     from shapely import Point, STRtree, box
@@ -254,8 +345,10 @@ def associate_entities(
         raise CadError("INVALID_ARGUMENT", "Association method must be inside, nearest or leader.")
     _positive(max_distance, "max_distance")
     _positive(flatten_tolerance, "flatten_tolerance")
+    _positive(ambiguity_tolerance, "ambiguity_tolerance", allow_zero=True)
     label_layers, target_layers = _layers(label_layers), _layers(target_layers)
-    label_types = _layers(label_types) or {"TEXT", "MTEXT", "ATTRIB"}
+    leader_layers = _layers(leader_layers)
+    label_types = _layers(label_types) or {"TEXT", "MTEXT", "ATTRIB", "MLEADER", "MULTILEADER"}
     target_types = _layers(target_types) or {
         "LWPOLYLINE",
         "POLYLINE",
@@ -273,7 +366,11 @@ def associate_entities(
         if label_layers is not None and target_layers is not None and method != "leader"
         else None
     )
-    needed_types = label_types | target_types | ({"LEADER"} if method == "leader" else set())
+    needed_types = label_types | target_types
+    if method == "leader":
+        needed_types |= {"LEADER", "MLEADER", "MULTILEADER"}
+        if leader_layers is not None:
+            needed_types |= {"LWPOLYLINE", "POLYLINE"}
     records = [
         r
         for r in iter_world_entities(
@@ -304,11 +401,23 @@ def associate_entities(
                 targets.append(record)
                 geometries.append(polygon.geometry)
     tree = STRtree(geometries) if geometries else None
-    leaders = (
-        [r for r in records if r["entity"].dxftype() == "LEADER"] if method == "leader" else []
-    )
+    leader_diagnostics, leader_paths = [], []
+    if method == "leader":
+        for record in records:
+            kind = record["entity"].dxftype()
+            if kind in {"LEADER", "MLEADER", "MULTILEADER"} or (
+                kind in {"LWPOLYLINE", "POLYLINE"}
+                and leader_layers is not None and record["layer"] in leader_layers
+            ):
+                leader_paths.extend(_leader_paths(record, leader_layers, leader_diagnostics))
+    leader_tree = STRtree([Point(p["tail"]) for p in leader_paths]) if leader_paths else None
+    linked_paths = defaultdict(list)
+    for index, path_evidence in enumerate(leader_paths):
+        if path_evidence["annotation_handle"]:
+            linked_paths[(tuple(path_evidence["record"]["instance_path"]),
+                          path_evidence["annotation_handle"])].append(index)
     pairs, unmatched, ambiguous = [], [], []
-    relation_count = 0
+    relation_count, candidate_work = 0, 0
     for label in sorted(labels, key=lambda r: r["entity_key"]):
         point = Point(_anchor(label))
         candidates = []
@@ -331,22 +440,27 @@ def associate_entities(
             ]
             candidates = [c for c in candidates if c[1] <= max_distance]
         elif tree is not None:
-            for leader in leaders:
-                vertices = list(leader["entity"].vertices)
-                if len(vertices) < 2:
-                    continue
-                tip, tail = (
-                    Point(vertices[0].x, vertices[0].y),
-                    Point(vertices[-1].x, vertices[-1].y),
-                )
-                annotation = leader["entity"].dxf.get("annotation_handle")
-                exact = (
-                    annotation == label["handle"]
-                    and leader["instance_path"] == label["instance_path"]
-                )
+            nearby = set(int(i) for i in leader_tree.query(
+                box(point.x - max_distance, point.y - max_distance,
+                    point.x + max_distance, point.y + max_distance)
+            )) if leader_tree is not None else set()
+            nearby.update(linked_paths[(tuple(label["instance_path"]), label["handle"])])
+            for leader_index in sorted(nearby):
+                path_evidence = leader_paths[leader_index]
+                leader = path_evidence["record"]
+                tip, tail = Point(path_evidence["tip"]), Point(path_evidence["tail"])
+                exact = (path_evidence["annotation_handle"] == label["handle"]
+                         and leader["instance_path"] == label["instance_path"])
                 if not exact and tail.distance(point) > max_distance:
                     continue
+                # Intrinsic MLEADER content belongs to its own leader paths;
+                # do not borrow another MLEADER's nearby annotation.
+                if leader["entity"].dxftype() in {"MLEADER", "MULTILEADER"} and not exact:
+                    continue
                 for index in tree.query(tip):
+                    candidate_work += 1
+                    if candidate_work > 100000:
+                        raise CadError("ASSOCIATION_LIMIT", "Leader-target candidate tests exceed their safety budget.")
                     index = int(index)
                     if geometries[index].covers(tip):
                         rank, distance = (0 if exact else 1), float(tail.distance(point))
@@ -360,6 +474,10 @@ def associate_entities(
                                     "link_kind": "annotation_handle"
                                     if exact
                                     else "tail_anchor_proximity",
+                                    "tip": path_evidence["tip"],
+                                    "tail": path_evidence["tail"],
+                                    "vertices": path_evidence["vertices"],
+                                    "direction_evidence": path_evidence["direction_evidence"],
                                 },
                             )
         best_by_target = {}
@@ -381,15 +499,21 @@ def associate_entities(
             )
             continue
         best_rank, best, _ = candidates[0]
-        tied = [c for c in candidates if c[0] == best_rank and abs(c[1] - best) <= 1e-7]
+        candidate_evidence = [
+            {"target": _evidence(targets[i]), "distance": d, "evidence_rank": rank,
+             **({"leader": leader_evidence[i][1]} if i in leader_evidence else {})}
+            for rank, d, i in candidates
+        ]
+        tied = [c for c in candidates
+                if c[0] == best_rank and abs(c[1] - best) <= ambiguity_tolerance]
         if len(tied) > 1:
             ambiguous.append(
                 {
                     "label": evidence,
-                    "reason": "multiple_equal_candidates",
-                    "candidates": [
-                        {"target": _evidence(targets[i]), "distance": d} for _, d, i in tied
-                    ],
+                    "reason": "multiple_equal_candidates" if ambiguity_tolerance <= 1e-7
+                    else "candidates_within_ambiguity_tolerance",
+                    "candidates": candidate_evidence,
+                    "competing_candidate_count": len(tied),
                 }
             )
             continue
@@ -399,8 +523,12 @@ def associate_entities(
             "target": _evidence(targets[index]),
             "method": method,
             "distance": distance,
-            "confidence": "unique_geometric_evidence",
+            "confidence": "unique_nearest_geometry" if method == "nearest"
+            else "unique_geometric_evidence",
             "candidate_count": len(candidates),
+            "candidates": candidate_evidence,
+            "distance_margin": candidates[1][1] - best
+            if len(candidates) > 1 and candidates[1][0] == best_rank else None,
         }
         if index in leader_evidence:
             pair["leader"] = leader_evidence[index][1]
@@ -416,7 +544,7 @@ def associate_entities(
                     {
                         "label": pair["label"],
                         "reason": "one_to_one_conflict",
-                        "candidates": [{"target": pair["target"], "distance": pair["distance"]}],
+                        "candidates": pair["candidates"],
                     }
                 )
         pairs = [p for p in pairs if p["target"]["entity_key"] not in conflicts]
@@ -425,6 +553,8 @@ def associate_entities(
         "layout": layout,
         "bbox": bbox,
         "method": method,
+        "ambiguity_tolerance": ambiguity_tolerance,
+        "leader_layers": sorted(leader_layers) if leader_layers is not None else None,
         "distance_unit": "drawing_unit",
         "pairs": pairs,
         "selection_complete": diagnostics.get("complete", True),
@@ -432,6 +562,8 @@ def associate_entities(
         "unmatched": unmatched,
         "ambiguous": ambiguous,
         "invalid_targets": invalid,
+        "unsupported_leaders": leader_diagnostics,
+        "candidate_relations_complete": True,
         "world_traversal": diagnostics,
         "summary": {
             "label_count": len(labels),
@@ -440,38 +572,85 @@ def associate_entities(
             "unmatched_count": len(unmatched),
             "ambiguous_count": len(ambiguous),
             "invalid_target_count": len(invalid),
+            "leader_path_count": len(leader_paths),
+            "unsupported_leader_count": len(leader_diagnostics),
+            "candidate_relation_count": relation_count,
         },
         "warnings": [
             "Confidence records geometric uniqueness, not a calibrated probability or engineering interpretation.",
             "Label anchors are associated; text extents and drawing units are not inferred.",
+            "Polyline leaders require explicitly selected leader layers; both endpoint directions remain geometric hypotheses.",
         ],
     }
     _unchanged(path, source_digest, identity)
     return _publish(result, output, path, overwrite, unmatched_output)
 
 
+def _axis_frame(axis, orientation):
+    if "origin" in axis:
+        return axis["origin"], axis["direction"]
+    return (([axis["position"], 0], [0, 1]) if orientation == "vertical"
+            else ([0, axis["position"]], [1, 0]))
+
+
+def _axis_projection(axis, orientation, point):
+    origin, direction = _axis_frame(axis, orientation)
+    delta = [point[i] - origin[i] for i in (0, 1)]
+    return (abs(delta[0] * direction[1] - delta[1] * direction[0]),
+            sum(delta[i] * direction[i] for i in (0, 1)))
+
+
+def _axis_point(axis, orientation, along):
+    origin, direction = _axis_frame(axis, orientation)
+    return [origin[i] + direction[i] * along for i in (0, 1)]
+
+
+def _axis_crossings(grid, tolerance):
+    """At most 499,500 pair tests for the validated 1,000-axis budget."""
+    flat = [(orientation, axis) for orientation, axes in grid.items() for axis in axes]
+    for index, (orientation, first) in enumerate(flat):
+        p, u = _axis_frame(first, orientation)
+        for other_orientation, second in flat[index + 1:]:
+            q, v = _axis_frame(second, other_orientation)
+            determinant = u[0] * v[1] - u[1] * v[0]
+            if abs(determinant) < 1e-12:
+                continue
+            delta = [q[i] - p[i] for i in (0, 1)]
+            a = (delta[0] * v[1] - delta[1] * v[0]) / determinant
+            b = (delta[0] * u[1] - delta[1] * u[0]) / determinant
+            if not (_range_covers(first, a, tolerance) and _range_covers(second, b, tolerance)):
+                continue
+            point = _axis_point(first, orientation, a)
+            result = {"x": point[0], "y": point[1],
+                      "axis_ids": [first["id"], second["id"]],
+                      "labels": [first.get("label"), second.get("label")]}
+            # Preserve the original orthogonal query contract.
+            if {orientation, other_orientation} == {"vertical", "horizontal"}:
+                vertical, horizontal = ((first, second) if orientation == "vertical"
+                                        else (second, first))
+                result.update(vertical=vertical["id"], horizontal=horizontal["id"],
+                              labels=[vertical.get("label"), horizontal.get("label")])
+            yield result
+
+
+def _axis_intersects_region(axis, orientation, region):
+    from shapely import LineString, box
+
+    shape = box(*region)
+    return any(LineString([_axis_point(axis, orientation, low),
+                           _axis_point(axis, orientation, high)]).intersects(shape)
+               for low, high in _axis_ranges(axis))
+
+
 def axes_entities(
-    path,
-    layout="Model",
-    line_layers=None,
-    label_layers=None,
-    label_regex=None,
-    bubble_block_regex=None,
-    tolerance=1.0,
-    max_distance=1000.0,
-    bbox=None,
-    point=None,
-    axes=None,
-    output=None,
-    overwrite=False,
-    source_info=None,
-    max_axes=1000,
-    max_intersections=100000,
-    document=None,
-    roots=None,
+    path, layout="Model", line_layers=None, label_layers=None, label_regex=None,
+    bubble_block_regex=None, tolerance=1.0, max_distance=1000.0, bbox=None,
+    point=None, axes=None, output=None, overwrite=False, source_info=None,
+    max_axes=1000, max_intersections=100000, document=None, roots=None,
     include_hidden=False,
 ):
-    """Extract an orthogonal axis grid, or query a revision-bound saved grid."""
+    """Extract/query finite straight axes in WCS; retain numbering and ambiguity evidence."""
+    from shapely import LineString, Point, STRtree, box
     from .spatial import iter_world_entities, validated_bbox
 
     _positive(tolerance, "tolerance")
@@ -480,8 +659,7 @@ def axes_entities(
         raise CadError("INVALID_ARGUMENT", "max_axes must be between 1 and 1000.")
     if type(max_intersections) is not int or not 0 <= max_intersections <= 100000:
         raise CadError("INVALID_ARGUMENT", "max_intersections must be between 0 and 100000.")
-    identity = _identity(path, source_info)
-    source_digest = file_sha256(path)
+    identity, source_digest = _identity(path, source_info), file_sha256(path)
     if axes:
         source = Path(axes)
         if source.stat().st_size > 8 * 1024 * 1024:
@@ -496,154 +674,158 @@ def axes_entities(
         grid = _validate_saved_grid(result)
         if result.get("layout") != layout:
             raise CadError("INVALID_AXES", "Saved axes belong to a different layout.")
-        response = {"source": identity, "axes_file": str(source.resolve()), "axes": grid}
+        response = {"source": identity, "axes_file": str(source.resolve()), "axes": grid,
+                    "selection_complete": result.get("selection_complete", False),
+                    "axis_geometry_complete": result.get("axis_geometry_complete", False)}
         if point is not None:
-            if (
-                not isinstance(point, (list, tuple))
-                or len(point) != 2
-                or any(type(n) not in (int, float) or not math.isfinite(n) for n in point)
-            ):
+            if (not isinstance(point, (list, tuple)) or len(point) != 2
+                or any(type(n) not in (int, float) or not math.isfinite(n) for n in point)):
                 raise CadError("INVALID_ARGUMENT", "point must be two finite coordinates.")
-            response["point"] = list(point)
-            response["nearest"] = {}
-            for orientation, value in (("vertical", point[0]), ("horizontal", point[1])):
+            response.update(point=list(point), nearest={})
+            for orientation, values in grid.items():
                 distances = sorted(
-                    ((abs(a["position"] - value), a) for a in grid[orientation]),
-                    key=lambda p: (p[0], p[1]["id"]),
+                    ((_axis_projection(a, orientation, point)[0], a) for a in values),
+                    key=lambda item: (item[0], item[1]["id"]),
                 )
                 best = distances[0][0] if distances else math.inf
-                along = point[1] if orientation == "vertical" else point[0]
-                response["nearest"][orientation] = [
-                    {
-                        "axis": a,
-                        "distance": d,
-                        "within_axis_extent": _range_covers(a, along, tolerance),
-                        "on_axis": d <= tolerance and _range_covers(a, along, tolerance),
-                    }
-                    for d, a in distances
-                    if abs(d - best) <= tolerance * 1e-6
-                ]
-            crossings, crossing_count, best_distance = [], 0, math.inf
-            for v in grid["vertical"]:
-                for h in grid["horizontal"]:
-                    if _range_covers(v, h["position"], tolerance) and _range_covers(
-                        h, v["position"], tolerance
-                    ):
-                        distance = math.hypot(v["position"] - point[0], h["position"] - point[1])
-                        if distance < best_distance - tolerance * 1e-6:
-                            crossings, crossing_count, best_distance = [], 0, distance
-                        if abs(distance - best_distance) > tolerance * 1e-6:
-                            continue
-                        crossing_count += 1
-                        if len(crossings) < 100:
-                            crossings.append(
-                                {
-                                    "vertical": v["id"],
-                                    "horizontal": h["id"],
-                                    "point": [v["position"], h["position"]],
-                                    "labels": [v.get("label"), h.get("label")],
-                                    "distance": distance,
-                                }
-                            )
-            response["nearest_intersections"] = crossings
-            response["nearest_intersection_count"] = crossing_count
-            response["nearest_intersections_complete"] = crossing_count == len(crossings)
+                response["nearest"][orientation] = []
+                for distance, axis in distances:
+                    if abs(distance - best) > tolerance * 1e-6:
+                        continue
+                    along = _axis_projection(axis, orientation, point)[1]
+                    extent = _range_covers(axis, along, tolerance)
+                    response["nearest"][orientation].append(
+                        {"axis": axis, "distance": distance, "within_axis_extent": extent,
+                         "on_axis": distance <= tolerance and extent})
+            crossings, count, best = [], 0, math.inf
+            for crossing in _axis_crossings(grid, tolerance):
+                distance = math.hypot(crossing["x"] - point[0], crossing["y"] - point[1])
+                if distance < best - tolerance * 1e-6:
+                    crossings, count, best = [], 0, distance
+                if abs(distance - best) > tolerance * 1e-6:
+                    continue
+                count += 1
+                if len(crossings) < min(100, max_intersections):
+                    crossings.append({**crossing, "point": [crossing["x"], crossing["y"]],
+                                      "distance": distance})
+            response.update(nearest_intersections=crossings, nearest_intersection_count=count,
+                            nearest_intersections_complete=count == len(crossings))
         if bbox is not None:
             region = validated_bbox(bbox)
-            response["bbox"] = region
-            response["axes_in_region"] = {
-                orientation: [
-                    a
-                    for a in values
-                    if region[0 if orientation == "vertical" else 1]
-                    <= a["position"]
-                    <= region[2 if orientation == "vertical" else 3]
-                    and any(
-                        low <= region[3 if orientation == "vertical" else 2]
-                        and high >= region[1 if orientation == "vertical" else 0]
-                        for low, high in _axis_ranges(a)
-                    )
-                ]
-                for orientation, values in grid.items()
-            }
-        response["summary"] = {
-            "vertical_count": len(grid["vertical"]),
-            "horizontal_count": len(grid["horizontal"]),
-        }
+            response.update(bbox=region, axes_in_region={
+                orientation: [a for a in values if _axis_intersects_region(a, orientation, region)]
+                for orientation, values in grid.items()})
+        response["summary"] = {f"{k}_count": len(v) for k, v in grid.items()}
         _unchanged(path, source_digest, identity)
         return _publish(response, output, path, overwrite, protected_paths=(source,))
     if point is not None:
         raise CadError("INVALID_ARGUMENT", "Point queries require a saved --axes file.")
-    regex = _pattern(
-        label_regex, r"^(?:[A-Za-z]{1,3}|\d+[A-Za-z]?(?:/\d+)?|[A-Za-z]{1,3}-[A-Za-z0-9]{1,6})$"
-    )
+    regex = _pattern(label_regex,
+                     r"^(?:[A-Za-z]{1,3}|\d+[A-Za-z]?(?:/\d+)?|[A-Za-z]{1,3}-[A-Za-z0-9]{1,6})$")
     block_regex = _pattern(bubble_block_regex)
     line_layers, label_layers = _layers(line_layers), _layers(label_layers)
     doc = document if document is not None else read_document(path)
     diagnostics = {}
-    records = [
-        r
-        for r in iter_world_entities(
-            doc,
-            layout,
-            roots=roots,
-            bbox=bbox,
-            max_entities=250000,
-            types={"LINE", "TEXT", "ATTRIB", "MTEXT", "CIRCLE", "ELLIPSE"},
-            diagnostics=diagnostics,
-        )
-        if include_hidden or r.get("visible", True)
-    ]
-    segments, labels, bubbles = [], [], []
-    warnings = []
+    records = [r for r in iter_world_entities(
+        doc, layout, roots=roots, bbox=bbox, max_entities=250000,
+        types={"LINE", "LWPOLYLINE", "POLYLINE", "ARC", "SPLINE", "TEXT", "ATTRIB",
+               "MTEXT", "CIRCLE", "ELLIPSE"}, diagnostics=diagnostics)
+        if include_hidden or r.get("visible", True)]
+    segments, labels, bubbles, unsupported = [], [], [], []
     for record in records:
         entity, kind = record["entity"], record["entity"].dxftype()
-        if kind == "LINE" and (line_layers is None or record["layer"] in line_layers):
-            a, b = entity.dxf.start, entity.dxf.end
-            if abs(a.x - b.x) <= tolerance and abs(a.y - b.y) > tolerance:
-                segments.append(("vertical", (a.x + b.x) / 2, min(a.y, b.y), max(a.y, b.y), record))
-            elif abs(a.y - b.y) <= tolerance and abs(a.x - b.x) > tolerance:
-                segments.append(
-                    ("horizontal", (a.y + b.y) / 2, min(a.x, b.x), max(a.x, b.x), record)
-                )
+        if kind in {"LINE", "LWPOLYLINE", "POLYLINE", "ARC", "SPLINE"} and (
+            line_layers is None or record["layer"] in line_layers
+        ):
+            points = ([list(entity.dxf.start)[:2], list(entity.dxf.end)[:2]] if kind == "LINE"
+                      else _polyline_points(entity) if kind in {"LWPOLYLINE", "POLYLINE"}
+                      else None)
+            reason = None
+            if not points or len(points) < 2:
+                reason = "curved_closed_or_unsupported_axis_path"
+            else:
+                a, b = points[0], points[-1]
+                length = math.dist(a, b)
+                if length <= tolerance:
+                    reason = "axis_endpoint_separation_below_tolerance"
+                else:
+                    u = [(b[i] - a[i]) / length for i in (0, 1)]
+                    if u[1] < -1e-12 or (abs(u[1]) <= 1e-12 and u[0] < 0):
+                        u = [-u[0], -u[1]]
+                    if any(abs((p[0] - a[0]) * u[1] - (p[1] - a[1]) * u[0]) > tolerance
+                           for p in points):
+                        reason = "non_collinear_polyline_axis"
+                    else:
+                        orientation = ("vertical" if abs(b[0] - a[0]) <= tolerance else
+                                       "horizontal" if abs(b[1] - a[1]) <= tolerance else "oblique")
+                        if orientation == "vertical":
+                            u, normal = [0.0, 1.0], [1.0, 0.0]
+                        elif orientation == "horizontal":
+                            u, normal = [1.0, 0.0], [0.0, 1.0]
+                        else:
+                            normal = [-u[1], u[0]]
+                        position = sum((a[i] + b[i]) * normal[i] / 2 for i in (0, 1))
+                        along = [sum(p[i] * u[i] for i in (0, 1)) for p in points]
+                        segments.append({"orientation": orientation, "position": position,
+                                         "direction": u, "normal": normal,
+                                         "range": [min(along), max(along)], "record": record,
+                                         "endpoints": [a, b], "length": length,
+                                         "extent_points": [points[along.index(min(along))],
+                                                           points[along.index(max(along))]]})
+            if reason:
+                unsupported.append({**_evidence(record), "reason": reason})
         if kind in {"TEXT", "ATTRIB", "MTEXT"} and (
             label_layers is None or record["layer"] in label_layers
-        ):
-            if regex.fullmatch(_label(record).strip()) and _anchor(record) is not None:
-                labels.append(record)
+        ) and regex.fullmatch(_label(record).strip()) and _anchor(record) is not None:
+            labels.append(record)
         if kind == "CIRCLE":
             names = [doc.entitydb.get(h.split("[", 1)[0]) for h in record["instance_path"]]
-            if block_regex is None or any(
-                e is not None and e.dxftype() == "INSERT" and block_regex.search(e.dxf.name)
-                for e in names
-            ):
+            if block_regex is None or any(e is not None and e.dxftype() == "INSERT"
+                                         and block_regex.search(e.dxf.name) for e in names):
                 bubbles.append(record)
-    grid = {"vertical": [], "horizontal": []}
-    for orientation in grid:
-        groups = []
-        for _, position, low, high, record in sorted(
-            (s for s in segments if s[0] == orientation),
-            key=lambda s: (s[1], s[2], s[4]["entity_key"]),
-        ):
-            if groups and abs(position - groups[-1]["position"]) <= tolerance:
-                group = groups[-1]
-                group["range"] = [min(low, group["range"][0]), max(high, group["range"][1])]
-                group["ranges"].append([low, high])
-                group["lines"].append(_evidence(record))
-            else:
-                groups.append(
-                    {
-                        "position": position,
-                        "range": [low, high],
-                        "ranges": [[low, high]],
-                        "lines": [_evidence(record)],
-                        "labels": [],
-                    }
-                )
-        if len(groups) > max_axes:
-            raise CadError("AXIS_LIMIT", "Axis groups exceed their safety budget.")
+    grid = {"vertical": [], "horizontal": [], "oblique": []}
+    group_tests = 0
+    for segment in sorted(segments, key=lambda s: (s["orientation"],
+                          math.atan2(s["direction"][1], s["direction"][0]), s["position"],
+                          s["record"]["entity_key"])):
+        groups = grid[segment["orientation"]]
+        matching = []
+        for group in groups:
+            group_tests += 1
+            if group_tests > 5000000:
+                raise CadError("AXIS_LIMIT", "Axis grouping exceeds five million candidate tests; narrow the selection.")
+            u, v = group["direction"], segment["direction"]
+            if abs(u[0] * v[1] - u[1] * v[0]) * segment["length"] > tolerance:
+                continue
+            distances = [_axis_projection(group, segment["orientation"], p)[0]
+                         for p in segment["endpoints"]]
+            if max(distances) <= tolerance:
+                matching.append(group)
+        if len(matching) > 1:
+            unsupported.append({**_evidence(segment["record"]),
+                                "reason": "multiple_axis_groups_within_tolerance"})
+            continue
+        if matching:
+            group = matching[0]
+            interval = [_axis_projection(group, segment["orientation"], p)[1]
+                        for p in segment["extent_points"]]
+            group["ranges"].append([min(interval), max(interval)])
+            group["lines"].append({**_evidence(segment["record"]),
+                                   "endpoints": segment["endpoints"]})
+        else:
+            if sum(len(values) for values in grid.values()) >= max_axes:
+                raise CadError("AXIS_LIMIT", "Axis groups exceed their safety budget.")
+            groups.append({"position": segment["position"], "direction": segment["direction"],
+                           "normal": segment["normal"],
+                           "origin": [n * segment["position"] for n in segment["normal"]],
+                           "range": segment["range"], "ranges": [segment["range"]],
+                           "lines": [{**_evidence(segment["record"]),
+                                      "endpoints": segment["endpoints"]}], "labels": []})
+    for orientation, groups in grid.items():
+        groups.sort(key=lambda a: (math.atan2(a["direction"][1], a["direction"][0]), a["position"]))
         for index, group in enumerate(groups, 1):
-            group["id"] = f"{'X' if orientation == 'vertical' else 'Y'}-{index:03d}"
+            prefix = {"vertical": "X", "horizontal": "Y", "oblique": "O"}[orientation]
+            group["id"] = f"{prefix}-{index:03d}"
             merged = []
             for low, high in sorted(group["ranges"]):
                 if merged and low <= merged[-1][1] + tolerance:
@@ -651,169 +833,104 @@ def axes_entities(
                 else:
                     merged.append([low, high])
             group["ranges"] = merged
-        grid[orientation] = groups
+            group["range"] = [merged[0][0], merged[-1][1]]
+    bubble_centers = [b["entity"].ocs().to_wcs(b["entity"].dxf.center) for b in bubbles]
+    bubble_radii = [b["entity"].dxf.radius for b in bubbles]
+    bubble_tree = STRtree([box(p.x - r - tolerance, p.y - r - tolerance,
+                              p.x + r + tolerance, p.y + r + tolerance)
+                          for p, r in zip(bubble_centers, bubble_radii)]) if bubbles else None
+    flat_axes = [(orientation, axis) for orientation, values in grid.items() for axis in values]
+    endpoint_tree = STRtree([LineString([
+        _axis_point(axis, orientation, axis["range"][0] - max_distance),
+        _axis_point(axis, orientation, axis["range"][1] + max_distance)]).buffer(tolerance)
+        for orientation, axis in flat_axes]) if flat_axes else None
     unmatched, ambiguous = [], []
+    relation_count = 0
     for label in labels:
         x, y = _anchor(label)
-        local_bubbles = []
-        for bubble in bubbles:
-            center, radius = (
-                bubble["entity"].ocs().to_wcs(bubble["entity"].dxf.center),
-                bubble["entity"].dxf.radius,
-            )
-            if math.hypot(center.x - x, center.y - y) <= radius + tolerance:
-                local_bubbles.append(bubble)
-        if bubbles and not local_bubbles:
-            unmatched.append(
-                {
-                    **_evidence(label),
-                    "text": _label(label).strip(),
-                    "anchor": [x, y],
-                    "reason": "no_containing_axis_bubble",
-                }
-            )
+        local = [int(i) for i in bubble_tree.query(Point(x, y))
+                 if math.hypot(bubble_centers[int(i)].x - x, bubble_centers[int(i)].y - y)
+                 <= bubble_radii[int(i)] + tolerance] if bubble_tree is not None else []
+        evidence = {**_evidence(label), "text": _label(label).strip(), "anchor": [x, y],
+                    "bubbles": [_evidence(bubbles[i]) for i in local]}
+        if bubbles and not local:
+            unmatched.append({**evidence, "reason": "no_containing_axis_bubble"})
             continue
-        # A left-aligned axis number is usually offset from its axis. The
-        # containing bubble centre supplies the geometric axis location;
-        # the text placement remains evidence for label-to-bubble membership.
-        anchors = [
-            bubble["entity"].ocs().to_wcs(bubble["entity"].dxf.center) for bubble in local_bubbles
-        ]
-        anchors = [(p.x, p.y) for p in anchors] or [(x, y)]
-        candidate_map = {}
-        for anchor_x, anchor_y in anchors:
-            for orientation, groups in grid.items():
-                perpendicular, along = (
-                    (anchor_x, anchor_y) if orientation == "vertical" else (anchor_y, anchor_x)
-                )
-                for axis in groups:
-                    distance = abs(perpendicular - axis["position"])
-                    if (
-                        distance <= tolerance
-                        and axis["range"][0] - max_distance
-                        <= along
-                        <= axis["range"][1] + max_distance
-                    ):
-                        endpoint = min(
-                            abs(along - bound) for interval in axis["ranges"] for bound in interval
-                        )
-                        if endpoint <= max_distance:
-                            candidate = (
-                                distance,
-                                endpoint,
-                                orientation,
-                                axis,
-                                [anchor_x, anchor_y],
-                            )
-                            old = candidate_map.get(axis["id"])
-                            if old is None or candidate[:2] < old[:2]:
-                                candidate_map[axis["id"]] = candidate
-        candidates = list(candidate_map.values())
-        candidates.sort(key=lambda c: (c[0], c[1], c[3]["id"]))
-        evidence = {
-            **_evidence(label),
-            "text": _label(label).strip(),
-            "anchor": [x, y],
-            "bubbles": [_evidence(b) for b in local_bubbles],
-        }
+        anchors = [[bubble_centers[i].x, bubble_centers[i].y] for i in local] or [[x, y]]
+        candidates = {}
+        for anchor in anchors:
+            nearby = endpoint_tree.query(Point(anchor)) if endpoint_tree is not None else []
+            for axis_index in nearby:
+                orientation, axis = flat_axes[int(axis_index)]
+                distance, along = _axis_projection(axis, orientation, anchor)
+                endpoint = min(abs(along - bound) for interval in axis["ranges"]
+                               for bound in interval)
+                if distance <= tolerance and endpoint <= max_distance:
+                    candidate = (distance, endpoint, axis, anchor)
+                    if axis["id"] not in candidates or candidate[:2] < candidates[axis["id"]][:2]:
+                        candidates[axis["id"]] = candidate
+        candidates = sorted(candidates.values(), key=lambda c: (c[0], c[1], c[2]["id"]))
+        relation_count += len(candidates)
+        if relation_count > 100000:
+            raise CadError("AXIS_LIMIT", "Axis-label candidates exceed their safety budget.")
+        evidence["candidates"] = [{"axis_id": c[2]["id"], "perpendicular_distance": c[0],
+                                   "endpoint_distance": c[1], "axis_anchor": c[3]}
+                                  for c in candidates]
         if not candidates:
-            unmatched.append(evidence)
+            unmatched.append({**evidence, "reason": "no_axis_endpoint_within_tolerance"})
             continue
         best = candidates[0]
-        ties = [
-            c
-            for c in candidates
-            if abs(c[0] - best[0]) <= tolerance * 1e-6 and abs(c[1] - best[1]) <= tolerance * 1e-6
-        ]
+        ties = [c for c in candidates if abs(c[0] - best[0]) <= tolerance * 1e-6
+                and abs(c[1] - best[1]) <= tolerance * 1e-6]
         if len(ties) > 1:
-            ambiguous.append({"label": evidence, "axis_ids": [c[3]["id"] for c in ties]})
+            ambiguous.append({"label": evidence, "axis_ids": [c[2]["id"] for c in ties]})
         else:
-            evidence["axis_anchor"] = best[4]
-            evidence["axis_anchor_kind"] = (
-                "containing_bubble_center" if local_bubbles else "text_placement"
-            )
-            best[3]["labels"].append(evidence)
-    for orientation, axes_list in grid.items():
-        labels_to_axes = defaultdict(list)
-        for axis in axes_list:
+            evidence.update(axis_anchor=best[3], axis_anchor_kind=(
+                "containing_bubble_center" if local else "text_placement"))
+            best[2]["labels"].append(evidence)
+    warnings = []
+    names_to_axes = defaultdict(list)
+    for orientation, groups in grid.items():
+        for axis in groups:
             names = sorted({label["text"] for label in axis["labels"]})
             axis["label"] = names[0] if len(names) == 1 else None
-            axis["confidence"] = (
-                "conflicting_endpoint_labels"
-                if len(names) > 1
-                else "matching_endpoint_labels"
-                if names
-                else "unlabeled_geometry"
-            )
+            axis["confidence"] = ("conflicting_endpoint_labels" if len(names) > 1 else
+                                  "matching_endpoint_labels" if names and len(axis["labels"]) > 1 else
+                                  "single_endpoint_label" if names else "unlabeled_geometry")
             if not names:
                 warnings.append({"code": "AXIS_UNLABELED", "axis_id": axis["id"]})
             if len(names) > 1:
-                warnings.append(
-                    {"code": "AXIS_LABEL_CONFLICT", "axis_id": axis["id"], "labels": names}
-                )
+                warnings.append({"code": "AXIS_LABEL_CONFLICT", "axis_id": axis["id"], "labels": names})
             for name in names:
-                labels_to_axes[name].append(axis["id"])
-        for label, ids in labels_to_axes.items():
-            if len(ids) > 1:
-                warnings.append(
-                    {
-                        "code": "DUPLICATE_AXIS_LABEL",
-                        "orientation": orientation,
-                        "label": label,
-                        "axis_ids": ids,
-                    }
-                )
-    intersections = []
-    count = 0
-    for vertical in grid["vertical"]:
-        for horizontal in grid["horizontal"]:
-            x, y = vertical["position"], horizontal["position"]
-            if _range_covers(vertical, y, tolerance) and _range_covers(horizontal, x, tolerance):
-                count += 1
-                if len(intersections) < max_intersections:
-                    intersections.append(
-                        {
-                            "x": x,
-                            "y": y,
-                            "vertical": vertical["id"],
-                            "horizontal": horizontal["id"],
-                            "labels": [vertical["label"], horizontal["label"]],
-                        }
-                    )
-    bounds = [
-        min((a["position"] for a in grid["vertical"]), default=None),
-        min((a["position"] for a in grid["horizontal"]), default=None),
-        max((a["position"] for a in grid["vertical"]), default=None),
-        max((a["position"] for a in grid["horizontal"]), default=None),
-    ]
-    result = {
-        "source": identity,
-        "layout": layout,
-        "bbox": bbox,
-        "axes": grid,
-        "grid_bbox": bounds,
-        "intersections": intersections,
-        "intersections_complete": len(intersections) == count,
-        "bubbles": [_evidence(b) for b in bubbles],
-        "unmatched_labels": unmatched,
-        "ambiguous_labels": ambiguous,
-        "world_traversal": diagnostics,
-        "tolerance": tolerance,
-        "distance_unit": "drawing_unit",
-        "selection_complete": diagnostics.get("complete", True),
-        "include_hidden": include_hidden,
-        "summary": {
-            "vertical_count": len(grid["vertical"]),
-            "horizontal_count": len(grid["horizontal"]),
-            "labeled_axis_count": sum(bool(a["label"]) for values in grid.values() for a in values),
-            "intersection_count": count,
-            "unmatched_label_count": len(unmatched),
-            "ambiguous_label_count": len(ambiguous),
-        },
-        "warnings": warnings
-        + [
-            "Only orthogonal line axes with geometric endpoint evidence are supported; unnumbered/ambiguous axes are not guessed."
-        ],
-    }
+                names_to_axes[(orientation, name)].append(axis["id"])
+    for (orientation, name), ids in names_to_axes.items():
+        if len(ids) > 1:
+            warnings.append({"code": "DUPLICATE_AXIS_LABEL", "orientation": orientation,
+                             "label": name, "axis_ids": ids})
+    intersections, count = [], 0
+    for crossing in _axis_crossings(grid, tolerance):
+        count += 1
+        if len(intersections) < max_intersections:
+            intersections.append(crossing)
+    vertices = [_axis_point(a, orientation, bound) for orientation, values in grid.items()
+                for a in values for interval in a["ranges"] for bound in interval]
+    bounds = ([min(p[0] for p in vertices), min(p[1] for p in vertices),
+               max(p[0] for p in vertices), max(p[1] for p in vertices)] if vertices else [None] * 4)
+    if unsupported:
+        warnings.append({"code": "UNSUPPORTED_AXIS_GEOMETRY", "count": len(unsupported)})
+    result = {"source": identity, "layout": layout, "bbox": bbox, "axes": grid,
+              "axis_format": "straight-wcs-v2", "grid_bbox": bounds,
+              "intersections": intersections, "intersections_complete": len(intersections) == count,
+              "bubbles": [_evidence(b) for b in bubbles], "unmatched_labels": unmatched,
+              "ambiguous_labels": ambiguous, "unsupported_axes": unsupported,
+              "world_traversal": diagnostics, "tolerance": tolerance,
+              "distance_unit": "drawing_unit", "include_hidden": include_hidden,
+              "axis_geometry_complete": not unsupported,
+              "selection_complete": diagnostics.get("complete", True) and not unsupported,
+              "summary": {**{f"{k}_count": len(v) for k, v in grid.items()},
+                  "labeled_axis_count": sum(bool(a["label"]) for v in grid.values() for a in v),
+                  "intersection_count": count, "unmatched_label_count": len(unmatched),
+                  "ambiguous_label_count": len(ambiguous), "unsupported_axis_count": len(unsupported)},
+              "warnings": warnings + ["Straight LINE and collinear open polyline axes use WCS endpoint evidence; curved axes are reported as unsupported. Axis labels are geometric evidence, not component semantics."]}
     _unchanged(path, source_digest, identity)
     return _publish(result, output, path, overwrite)

@@ -1,5 +1,41 @@
 # Large drawing query acceptance
 
+## Version 0.4: reusable actual-drawing selections
+
+The [anonymous workset report](benchmarks/workset-windows-v4.json) compares one
+real structural sheet selected from a 30,433-native-entity / 32,815,833-byte DXF.
+The foundation workset has 369 native roots; a related two-page workset has 888.
+Preparation took 34.00 s / 36.39 s respectively in the direct Python API and
+decoded the source once plus one serialized-subset verification read. Those
+preparation timings exclude CLI process startup and are paid before reuse.
+
+| Same selected work | Original full DXF | Prepared workset | Physical original DXF parses after preparation |
+| --- | ---: | ---: | ---: |
+| First native query, five LINE records | 32.85 s | 6.46 s | 0 |
+| One corresponding LINE measurement | 15.08 s | 4.85 s | 0 |
+| Foundation-page SVG | 22.79 s | 12.35 s | 0 |
+
+These are supervised end-to-end worker measurements, including process startup,
+imports and instrumentation. Both query variants began without a prepared query
+view; this is not a comparison against an already warm original query. Repeated
+geometry commands still decode the subset. The new scope does not make full
+drawing calls free and does not eliminate all parsing.
+
+Matched LINE measurement totals agree. Serialized subset geometry/resources were
+read back before use. At 1,600 px width, original and subset foundation previews
+had 482 differing pixels out of 1,822,400 (0.02645%); SVG bytes were not identical.
+Pattern generation uses an upstream random origin perturbation. This visual
+comparison is limited to this pair, not a proof of DWG losslessness or universal
+CAD display equivalence. The input is unitless; no physical scale was inferred.
+
+Three source entities had no computable bounds and seven had partial bounds.
+The workset reports spatial selection completeness as false; source and existing
+split files were unchanged. The actual source contains no title explicitly
+matching the requested hypothetical 1# foundation example, so this test uses the
+existing 2# gallery foundation page and its related column page.
+
+The existing synthetic query benchmark below remains a separate workload.
+
 This benchmark checks persistent query pagination and bounded response size. It
 is a controlled workload, not evidence that arbitrary architectural drawings,
 deep block hierarchies, fonts, rendering, or editing all meet these timings.

@@ -4,6 +4,8 @@ TCAD 0.3.0 支持 `sheets`、`split` 和按图幅重绘。先运行
 `tcad capabilities --detail full --fields sheet_workflow` 与 `tcad schema request`，
 确认安装版本和可接受参数。以下图层、图名、handle 和坐标均为示例。
 
+0.4.0 增加[可复用工作集](agent-basis.md)：先把相关图幅或多个范围准备成子图，后续分析不再解析原整图。单张图幅可与 bbox 组合继续框选；按工作集全部选页重绘会同时生成离线 HTML。
+
 ## 一次生成整套成果
 
 ```powershell
@@ -145,13 +147,14 @@ I/O，不能将一次成功或提高预算理解为任意复杂图纸的速度�
 
 `--sheet` 可用唯一 ID、图名或名称；重复标题应改用 ID。`--manifest` 校验原始
 来源/规范化 DXF SHA，不一致返回 `STALE_MANIFEST`。已有 manifest 时优先复用；
-未提供时会重新发现图框。`render` 的 `--sheet` 与 `--bbox` 互斥。
+未提供时会重新发现图框。单张 `--sheet` 与 `--bbox` 组合取两者交集；`--sheet all`
+与 bbox 不能同时使用，多范围应先建立 workset。
 
 ```powershell
 .\tcad.ps1 render 'project.dxf' --sheet all --manifest 'artifacts/project-sheets/manifest.json' --layers AXIS AXIS_LABEL COLUMN COLUMN_LABEL --output-dir 'artifacts/column-previews'
 ```
 
-`--sheet all` 使用新输出目录，一次读取源文档，为每个图幅生成 SVG/PNG 和
+`--sheet all` 使用新输出目录，一次读取源文档，为每个图幅生成 SVG/PNG、HTML 和
 `render-manifest.json`，默认 PNG 最长边 1600。此命令重绘已有图幅，不重新导出
 DXF。默认整批预览上限为 512 MiB。
 
@@ -175,7 +178,10 @@ JSON 请求使用 `render_options` 对象，支持 `layers`、`exclude_layers`�
 SVG 按图框裁切适配，不能用于量尺，也不是 1:1 出图。默认白底，支持黑底和
 layout 背景；`--foreground monochrome` 使用单色。
 `--font-family` 可指定已安装字体。文字转换成路径后不要求浏览器安装相同字体，
-但替代字体字形/字宽、缺失 SHX/bigfont 和专用钢筋符号仍可能不同。
+但替代字体字形/字宽、缺失 SHX/bigfont 和专用钢筋符号仍可能不同。0.4.0 可传
+`--font-path`、`--font-map` 和 `--resource-path` 补齐本地字体/图片，图片嵌入 SVG 后
+不依赖原路径；未找到的资源仍报告。`preview_quality` 区分内容缺失与外观替代，
+`--strict` 在任一项不完整时拒绝发布。详见[资源与质量说明](agent-basis.md)。
 
 默认 `--hatch-mode adaptive` 会将低于预览分辨率的密集图案转成完整边界实填，
 记录 `HATCH_SIMPLIFIED`；`accurate` 保留原始图案，复杂度超限即失败。局部 bbox

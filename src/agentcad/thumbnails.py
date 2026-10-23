@@ -4,6 +4,8 @@
 """Small PNG gallery images from the CLI's self-contained glyph-path SVGs."""
 
 import hashlib
+import base64
+import binascii
 from io import BytesIO
 from math import isfinite
 from pathlib import Path
@@ -14,6 +16,49 @@ from .errors import CadError
 from .io import atomic_output
 
 MAX_INPUT_BYTES = 64 * 1024 * 1024
+
+
+def validate_static_svg_resources(root):
+    """Allow local fragments and verified inline PNGs, never active/remote data."""
+    from PIL import Image
+    identifiers = {node.attrib["id"] for node in root.iter() if "id" in node.attrib}
+    decoded_pixels = 0
+    image_count = 0
+    for element in root.iter():
+        kind = element.tag.rsplit("}", 1)[-1]
+        if kind in {"script", "foreignObject", "text", "tspan"}:
+            raise ValueError("Only static glyph-path previews are supported")
+        for key, value in element.attrib.items():
+            if key.rsplit("}", 1)[-1] in {"href", "src"}:
+                if value.startswith("#") and value[1:] in identifiers:
+                    continue
+                if kind != "image" or not value.startswith("data:image/png;base64,"):
+                    raise ValueError("Only internal fragments and embedded PNG images are supported")
+                try:
+                    raw = base64.b64decode(value.split(",", 1)[1], validate=True)
+                    with Image.open(BytesIO(raw)) as image:
+                        if image.format != "PNG":
+                            raise ValueError("Embedded raster must be PNG")
+                        decoded_pixels += image.width * image.height
+                        if decoded_pixels > 32 * 1024 * 1024:
+                            raise ValueError("Embedded raster pixel budget exceeded")
+                        image.verify()
+                    image_count += 1
+                except (binascii.Error, OSError, Image.DecompressionBombError) as exc:
+                    raise ValueError("Invalid embedded PNG") from exc
+        values = list(element.attrib.values())
+        if kind == "style":
+            values.append(element.text or "")
+        for value in values:
+            if re.search(r"@import|@font-face|file://", value, re.I):
+                raise ValueError("External CSS resources are not supported")
+            if "\\" in value and (kind == "style" or "url" in value.lower()):
+                raise ValueError("Escaped resource syntax is not supported")
+            for match in re.finditer(r"url\(\s*(['\"]?)(.*?)\1\s*\)", value, re.I):
+                reference = match.group(2).strip()
+                if not reference.startswith("#") or reference[1:] not in identifiers:
+                    raise ValueError("Only existing internal SVG resource URLs are supported")
+    return image_count
 
 
 def create_thumbnail(svg_path, png_path, max_side=1280,
@@ -52,19 +97,7 @@ def create_thumbnail(svg_path, png_path, max_side=1280,
         box = [float(value) for value in re.split(r"[\s,]+", root.attrib["viewBox"].strip())]
         if len(box) != 4 or not all(isfinite(value) for value in box) or min(box[2:]) <= 0:
             raise ValueError("viewBox must have finite positive width and height")
-        for element in root.iter():
-            kind = element.tag.rsplit("}", 1)[-1]
-            if kind in ("script", "foreignObject", "text", "tspan"):
-                raise ValueError("Only static glyph-path previews are supported")
-            for key, value in element.attrib.items():
-                if key.rsplit("}", 1)[-1] == "href" and not value.startswith("#"):
-                    raise ValueError("Linked resources are not supported")
-            # The CLI emits simple color/stroke classes. Resource URL values
-            # are deliberately unsupported even when hidden in a CSS class.
-            if any("url(" in value.lower() for value in element.attrib.values()):
-                raise ValueError("Resource URLs are not supported")
-            if kind == "style" and "url(" in (element.text or "").lower():
-                raise ValueError("Resource URLs are not supported")
+        validate_static_svg_resources(root)
     except (UnicodeError, ElementTree.ParseError, KeyError, ValueError) as exc:
         raise CadError("INVALID_SVG", "Cannot rasterize this self-contained preview.",
                        {"reason": str(exc)}) from exc

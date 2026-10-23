@@ -21,7 +21,7 @@ def _asset(value):
     return quote(str(path), safe="/")
 
 
-def write_sheet_report(manifest, output_path):
+def write_sheet_report(manifest, output_path, manifest_filename="manifest.json"):
     """Write one HTML gallery beside its manifest, DXF and SVG assets.
 
     No server, network requests or CAD calls are needed to inspect a sheet. The
@@ -40,10 +40,17 @@ def write_sheet_report(manifest, output_path):
             "ENTITY_SKIPPED": "存在未绘制的实体，详见诊断",
             "XREF_UNRESOLVED": "外部参照未解析",
             "HATCH_SIMPLIFIED": "高密度填充已按预览分辨率简化，DXF 保留原始图案",
+            "FONT_FILE_UNAVAILABLE": "原始字体缺失，当前使用可用字体，字宽可能不同",
+            "BIGFONT_COMPOSITION_UNSUPPORTED": "原图大字体组合尚未复现，须核对字体",
+            "FONT_MAPPED": "使用调用方指定的字体映射",
+            "RESOURCE_NOT_FOUND": "选区内图片资源未找到",
         }
         for diagnostic in preview.get("diagnostics", []):
             if diagnostic.get("code") in diagnostic_labels:
                 notes.append(diagnostic_labels[diagnostic["code"]])
+        quality = preview.get("preview_quality", {})
+        if quality.get("complete") is False:
+            notes.append("预览质量：" + ("存在内容缺失" if not quality.get("content_complete") else "内容可绘制，显示外观有替代"))
         svg = item.get("svg") or item.get("files", {}).get("svg")
         dxf = item.get("dxf") or item.get("files", {}).get("dxf")
         if isinstance(svg, dict):
@@ -87,6 +94,7 @@ def write_sheet_report(manifest, output_path):
     source = manifest.get("source", {})
     source_name = Path(source.get("path", source.get("input", "CAD 图纸"))).name if isinstance(source, dict) else Path(str(source)).name
     page = _PAGE.replace("__SOURCE__", html.escape(source_name)).replace("__DATA__", encoded)
+    page = page.replace('href="manifest.json"', 'href="' + _asset(manifest_filename) + '"')
     target = Path(output_path)
     target.write_text(page, encoding="utf-8")
     return str(target)

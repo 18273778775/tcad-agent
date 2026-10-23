@@ -36,7 +36,8 @@ def parser():
     )
     for name in ("info", "query", "measure", "render", "export"):
         sub = commands.add_parser(name)
-        sub.add_argument("input")
+        sub.add_argument("input", nargs="?")
+        sub.add_argument("--workset", help="Verified prepared drawing subset; input may be omitted")
         sub.add_argument("--layout", default="Model")
         if name == "query":
             sub.add_argument("--type", dest="types", action="append")
@@ -72,6 +73,11 @@ def parser():
             sub.add_argument("--hatch-mode", choices=["adaptive", "accurate"], default="adaptive")
             sub.add_argument("--lineweight-scale", type=float, default=1.0)
             sub.add_argument("--font-family", help="Installed font family for outline text")
+            sub.add_argument("--resource-path", dest="resource_paths", action="append")
+            sub.add_argument("--font-path", dest="font_paths", action="append")
+            sub.add_argument("--font-map", help="JSON object mapping CAD style/font names to font files")
+            sub.add_argument("--max-resource-bytes", type=int, default=8 * 1024 * 1024)
+            sub.add_argument("--strict", action="store_true", help="Refuse publication when selected preview content is incomplete")
             sub.add_argument("--annotate", choices=["labels", "areas", "axes"])
             sub.add_argument("--legend", action="store_true")
             sub.add_argument("--max-annotations", type=int, default=200)
@@ -126,11 +132,17 @@ def parser():
             sub.add_argument("--hatch-mode", choices=["adaptive", "accurate"])
             sub.add_argument("--lineweight-scale", type=float)
             sub.add_argument("--font-family")
+            sub.add_argument("--resource-path", dest="resource_paths", action="append")
+            sub.add_argument("--font-path", dest="font_paths", action="append")
+            sub.add_argument("--font-map")
+            sub.add_argument("--max-resource-bytes", type=int)
+            sub.add_argument("--strict", action="store_true", default=None)
             sub.add_argument("--layers", nargs="+")
             sub.add_argument("--exclude-layers", nargs="+")
     for name in ("index", "area", "associate", "axes"):
         sub = commands.add_parser(name)
-        sub.add_argument("input")
+        sub.add_argument("input", nargs="?")
+        sub.add_argument("--workset", help="Verified prepared drawing subset; input may be omitted")
         sub.add_argument("--layout", default="Model")
         if name == "index":
             sub.add_argument("--text-scope", choices=["layout", "block", "all"], default="all")
@@ -164,6 +176,8 @@ def parser():
                 sub.add_argument("--one-to-one", action="store_true")
                 sub.add_argument("--flatten-tolerance", type=float, default=.1)
                 sub.add_argument("--unmatched-output")
+                sub.add_argument("--leader-layers", nargs="+")
+                sub.add_argument("--ambiguity-tolerance", type=float, default=1e-7)
             else:
                 sub.add_argument("--line-layers", nargs="+")
                 sub.add_argument("--bubble-block-regex")
@@ -172,6 +186,21 @@ def parser():
                 sub.add_argument("--axes", help="Previously saved source-bound axes JSON")
                 sub.add_argument("--max-axes", type=int, default=1000)
                 sub.add_argument("--max-intersections", type=int, default=100000)
+    sub = commands.add_parser("workset", help="Prepare related sheets or regions once for repeated analysis")
+    sub.add_argument("input")
+    sub.add_argument("--output-dir", required=True)
+    sub.add_argument("--layout", default="Model")
+    sub.add_argument("--manifest")
+    sub.add_argument("--sheet", dest="sheets", action="append")
+    sub.add_argument("--bbox", dest="bboxes", nargs=4, type=float, action="append")
+    sub.add_argument("--building")
+    sub.add_argument("--kind")
+    sub.add_argument("--title-regex")
+    sub.add_argument("--handle", dest="handles", action="append")
+    sub.add_argument("--layers", nargs="+")
+    sub.add_argument("--type", dest="types", action="append")
+    sub.add_argument("--max-entities", type=int, default=100000)
+    sub.add_argument("--max-bytes", type=int, default=256 * 1024 * 1024)
     for name in ("new", "apply"):
         sub = commands.add_parser(name)
         sub.add_argument("--output", required=True)
@@ -286,7 +315,7 @@ def main(argv=None):
             return serve()
         if args.get("result_file"):
             target = Path(args["result_file"]).expanduser().resolve()
-            for key in ("file", "plan", "spec", "mapping", "frames", "input", "output", "output_dir", "model", "source"):
+            for key in ("file", "plan", "spec", "mapping", "frames", "input", "output", "output_dir", "model", "source", "workset", "font_map"):
                 source = args.get(key)
                 if isinstance(source, str) and source != "-" and Path(source).expanduser().resolve() == target:
                     raise CadError("OUTPUT_CONFLICT", "Result JSON must not replace an input, plan, spec or model.")
@@ -302,8 +331,11 @@ def main(argv=None):
             args["frames"] = read_json_file(args["frames"])
         if command in {"sheets", "split"} and args.get("names"):
             args["names"] = read_json_file(args["names"])
+        if command in {"render", "split"} and args.get("font_map"):
+            args["font_map"] = read_json_file(args["font_map"])
         if command == "split":
-            render_keys = {"foreground", "background", "hatch_mode", "lineweight_scale", "font_family", "layers", "exclude_layers"}
+            render_keys = {"foreground", "background", "hatch_mode", "lineweight_scale", "font_family", "layers", "exclude_layers",
+                           "resource_paths", "font_paths", "font_map", "max_resource_bytes", "strict"}
             render_options = {key: args.pop(key) for key in render_keys if args.get(key) is not None}
             if render_options:
                 args["render_options"] = render_options

@@ -18,6 +18,26 @@ from .errors import CadError
 
 _HELD_LOCKS = ContextVar("tcad_held_destination_locks", default=frozenset())
 _REVISION_CHECKS = ContextVar("tcad_revision_checks", default={})
+_DOCUMENT_READ_SCOPE = ContextVar("tcad_document_read_scope", default=None)
+
+
+@contextmanager
+def document_read_scope():
+    """Reuse only the first source within one read-only operation.
+
+    A request never shares mutable document objects with another request. Keep
+    just the first document: split validation must not retain every export.
+    """
+    existing = _DOCUMENT_READ_SCOPE.get()
+    if existing is not None:
+        yield existing
+        return
+    state = {"document_loads": 0, "source_cache_hits": 0}
+    token = _DOCUMENT_READ_SCOPE.set(state)
+    try:
+        yield state
+    finally:
+        _DOCUMENT_READ_SCOPE.reset(token)
 
 
 def check_input_size(source):
@@ -138,10 +158,22 @@ def read_document(path):
     if source.suffix.lower() != ".dxf":
         raise CadError("UNSUPPORTED_FORMAT", "The DXF engine requires a .dxf file.")
     check_input_size(source)
+    scope = _DOCUMENT_READ_SCOPE.get()
+    stamp = source.stat()
+    revision = (str(source), stamp.st_size, stamp.st_mtime_ns, stamp.st_ctime_ns,
+                stamp.st_ino)
+    if scope is not None and scope.get("revision") == revision:
+        scope["source_cache_hits"] += 1
+        return scope["document"]
     try:
-        return ezdxf.readfile(source)
+        document = ezdxf.readfile(source)
     except (OSError, ezdxf.DXFError, UnicodeError, ValueError) as exc:
         raise CadError("INVALID_DXF", "Cannot read the DXF drawing.", {"reason": str(exc)}) from exc
+    if scope is not None:
+        scope["document_loads"] += 1
+        if "document" not in scope:
+            scope.update(document=document, revision=revision)
+    return document
 
 
 @contextmanager

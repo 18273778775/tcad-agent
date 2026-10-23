@@ -1,0 +1,94 @@
+{
+  "scope": "one actual structural foundation page; no original CAD distributed",
+  "python": "3.12.13",
+  "platform": "Windows",
+  "native_source_entities": 30433,
+  "source_bytes": 32815833,
+  "foundation_entities": 369,
+  "foundation_dxf_bytes": 4730092,
+  "preparations": [
+    {
+      "scope": "foundation",
+      "seconds": 34.000034,
+      "selected_entities": 369,
+      "physical_source_parses": 1,
+      "serialized_subset_reads": 1,
+      "timing": "direct API, not CLI"
+    },
+    {
+      "scope": "related",
+      "seconds": 36.388797,
+      "selected_entities": 888,
+      "physical_source_parses": 1,
+      "serialized_subset_reads": 1,
+      "timing": "direct API, not CLI"
+    }
+  ],
+  "runs": [
+    {
+      "variant": "original",
+      "command": "query",
+      "elapsed_seconds": 32.84877950000009,
+      "peak_rss_bytes": 386342912,
+      "physical_original_parses": 1,
+      "physical_subset_parses": 0
+    },
+    {
+      "variant": "original",
+      "command": "measure",
+      "elapsed_seconds": 15.07941380000193,
+      "peak_rss_bytes": 305434624,
+      "physical_original_parses": 1,
+      "physical_subset_parses": 0
+    },
+    {
+      "variant": "original",
+      "command": "render",
+      "elapsed_seconds": 22.79046329999983,
+      "peak_rss_bytes": 433659904,
+      "physical_original_parses": 1,
+      "physical_subset_parses": 0
+    },
+    {
+      "variant": "workset",
+      "command": "query",
+      "elapsed_seconds": 6.458724699998129,
+      "peak_rss_bytes": 158978048,
+      "physical_original_parses": 0,
+      "physical_subset_parses": 1
+    },
+    {
+      "variant": "workset",
+      "command": "measure",
+      "elapsed_seconds": 4.845063600001595,
+      "peak_rss_bytes": 108621824,
+      "physical_original_parses": 0,
+      "physical_subset_parses": 1
+    },
+    {
+      "variant": "workset",
+      "command": "render",
+      "elapsed_seconds": 12.352811999997357,
+      "peak_rss_bytes": 260755456,
+      "physical_original_parses": 0,
+      "physical_subset_parses": 1
+    }
+  ],
+  "measurement_totals_equal": true,
+  "svg_bytes_equal": false,
+  "render_pixels": {
+    "dimensions": [
+      1600,
+      1139
+    ],
+    "different_pixels": 482,
+    "pixel_count": 1822400,
+    "difference_fraction": 0.000264486391571554
+  },
+  "sources_unchanged": true,
+  "units": "unitless, no physical scale inferred",
+  "selection_complete": false,
+  "unknown_bounds": 3,
+  "partial_bounds": 7,
+  "limits": "Single run; original and workset query views both cold; includes supervised startup/imports; preparation amortized separately."
+}

@@ -152,7 +152,8 @@ def render_document(document, output_path, layout="Model", overwrite=False,
                     foreground="cad", lineweight_scale=1.0, font_family=None,
                     entities=None, bbox_cache=None, hatch_mode="adaptive",
                     layers=None, exclude_layers=None, annotate=None, legend=False,
-                    max_annotations=200):
+                    max_annotations=200, resource_paths=None, font_paths=None,
+                    font_map=None, max_resource_bytes=8 * 1024 * 1024, strict=False):
     """Render a parsed document, optionally clipping a sheet region in WCS.
 
     ``entities`` is an already assigned iterable of native entities; sheet batches
@@ -161,6 +162,8 @@ def render_document(document, output_path, layout="Model", overwrite=False,
     stored as glyph paths, so display does not require platform fonts.
     """
     target = Path(output_path).expanduser().resolve()
+    from .render_assets import validate_asset_options, PreviewResources, make_svg_backend, preview_quality
+    validate_asset_options(resource_paths, font_paths, font_map, max_resource_bytes, strict)
     if target.suffix.lower() != ".svg":
         raise CadError("UNSUPPORTED_FORMAT", "Preview output must have a .svg extension.")
     selected_types, handles = _validate_options(
@@ -177,7 +180,7 @@ def render_document(document, output_path, layout="Model", overwrite=False,
     blocked_layers = set(exclude_layers or [])
     try:
         from ezdxf import bbox as dxf_bbox
-        from ezdxf.addons.drawing import Frontend, RenderContext, svg
+        from ezdxf.addons.drawing import Frontend, RenderContext
         from ezdxf.addons.drawing import layout as page_layout
         from ezdxf.addons.drawing.config import (
             Configuration, ImagePolicy, BackgroundPolicy, ColorPolicy)
@@ -194,6 +197,8 @@ def render_document(document, output_path, layout="Model", overwrite=False,
     if not len(selected_layout):
         raise CadError("EMPTY_DRAWING", "The selected layout has no entities.", {"layout": layout})
     diagnostics = _Diagnostics()
+    resources = PreviewResources(document, diagnostics, resource_paths, font_paths,
+                                 font_map, max_resource_bytes)
     region = BoundingBox2d([(bbox[0], bbox[1]), (bbox[2], bbox[3])]) if bbox else None
     cache = bbox_cache if bbox_cache is not None else dxf_bbox.Cache()
     candidates = selected_layout if entities is None else entities
@@ -230,6 +235,43 @@ def render_document(document, output_path, layout="Model", overwrite=False,
              "skip_reasons": Counter(), "drawn_layers": Counter(), "excluded_layers": Counter()}
 
     class ReportingFrontend(Frontend):
+        def draw_image_entity(self, entity, properties):
+            from ezdxf.addons.drawing.backend import ImageData
+            from ezdxf.npshapes import NumpyPoints2d
+            import numpy as np
+            image_def = entity.image_def
+            image = None
+            if image_def is not None and entity.dxf.flags & entity.SHOW_IMAGE:
+                image = resources.image(image_def.dxf.filename, entity.dxf.handle)
+            if image is None:
+                diagnostics.add("EXTERNAL_CONTENT_PLACEHOLDER", type="IMAGE", handle=entity.dxf.handle)
+                return super().draw_image_entity(entity, properties)
+            from PIL import ImageEnhance
+            from ezdxf.addons.drawing.frontend import _blend_image_towards, _multiply_alpha
+            from ezdxf.colors import RGB, RGBA
+            if entity.dxf.contrast != 50:
+                image = ImageEnhance.Contrast(image).enhance(entity.dxf.contrast / 50)
+            if entity.dxf.fade:
+                image = _blend_image_towards(image, entity.dxf.fade / 100,
+                                             RGB.from_hex(self.ctx.current_layout_properties.background_color))
+            if entity.dxf.brightness != 50:
+                amount = entity.dxf.brightness / 50 - 1
+                image = _blend_image_towards(image, abs(amount),
+                                             RGBA(255, 255, 255, 255) if amount > 0 else RGBA(0, 0, 0, 255))
+            if (entity.dxf.contrast != 50 or entity.dxf.fade or entity.dxf.brightness != 50):
+                diagnostics.add("IMAGE_ADJUSTMENT_APPROXIMATED", handle=entity.dxf.handle)
+            if not entity.dxf.flags & entity.USE_TRANSPARENCY:
+                image.putalpha(255)
+            if entity.transparency:
+                image = _multiply_alpha(image, 1.0 - entity.transparency)
+            self.pipeline.draw_image(ImageData(
+                image=np.array(image), transform=entity.get_wcs_transform(),
+                pixel_boundary_path=NumpyPoints2d(entity.pixel_boundary_path()),
+                use_clipping_boundary=bool(entity.dxf.flags & entity.USE_CLIPPING_BOUNDARY),
+                remove_outside=entity.dxf.clip_mode == 0), properties)
+            points = [v.vec2 for v in entity.boundary_path_wcs()]
+            self.pipeline.draw_solid_lines(list(zip(points, points[1:])), properties)
+
         def draw_composite_entity(self, entity, properties):
             if entity.dxftype() == "DIMENSION":
                 # Anonymous dimension-block primitives commonly use layer 0.
@@ -310,11 +352,19 @@ def render_document(document, output_path, layout="Model", overwrite=False,
                                                   or effective in blocked_layers):
                 stats["excluded_layers"][effective] += 1
                 return
+            if entity.dxftype() != "INSERT" and region is not None:
+                # Nested block leaves outside the chosen frame must not load
+                # resources or poison this frame's quality report.
+                extent = dxf_bbox.extents([entity], fast=True, cache=cache)
+                if extent.has_data and not region.has_intersection(BoundingBox2d(extent)):
+                    return
             stats["draw_calls"] += 1
             stats["drawn_types"][entity.dxftype()] += 1
+            if entity.dxftype() == "POINT" and diagnostics.counts["RELATIVE_POINT_SIZE_CONFIGURATION"]:
+                diagnostics.add("RELATIVE_POINT_SIZE_APPROXIMATED", handle=entity.dxf.handle)
             if entity.dxftype() != "INSERT":
                 stats["drawn_layers"][effective] += 1
-            if entity.dxftype() in ("IMAGE", "OLE2FRAME"):
+            if entity.dxftype() == "OLE2FRAME":
                 diagnostics.add("EXTERNAL_CONTENT_PLACEHOLDER", type=entity.dxftype(), handle=entity.dxf.handle)
             if entity.dxftype() in ("TEXT", "MTEXT", "ATTRIB", "ATTDEF"):
                 raw = entity.text if entity.dxftype() == "MTEXT" else entity.dxf.text
@@ -337,10 +387,15 @@ def render_document(document, output_path, layout="Model", overwrite=False,
                             handle=entity.dxf.get("handle", ""), reason=msg)
 
         def log_message(self, message):
-            diagnostics.add("RENDERER_MESSAGE", message=message)
+            # This constructor warning occurs even in drawings without POINTs.
+            # Escalate it only if the chosen selection actually renders a point.
+            code = ("RELATIVE_POINT_SIZE_CONFIGURATION" if str(message) == "relative point size is not supported"
+                    else "RENDERER_MESSAGE")
+            diagnostics.add(code, message=message)
 
     try:
-        backend = svg.SVGBackend()
+        resources.install_fonts(fonts)
+        backend = make_svg_backend(region)
         context = RenderContext(document)
         fallback_face = _cjk_face(fonts, font_family)
         color_policy = ColorPolicy.COLOR
@@ -358,11 +413,17 @@ def render_document(document, output_path, layout="Model", overwrite=False,
             if entity.dxftype() not in ("TEXT", "MTEXT", "ATTRIB", "ATTDEF"):
                 return
             style_name = entity.dxf.get("style", "Standard")
+            mapped = resources.font_aliases.get(style_name.casefold())
             try:
                 style = document.styles.get(style_name)
                 for role in ("font", "bigfont"):
                     requested = style.dxf.get(role, "")
-                    if requested and not fonts.font_manager.has_font(Path(requested).name):
+                    if role == "font" and mapped is None:
+                        mapped = resources.font_aliases.get(requested.casefold())
+                    if role == "bigfont" and requested:
+                        diagnostics.add("BIGFONT_COMPOSITION_UNSUPPORTED", style=style_name,
+                                        requested=requested)
+                    if requested and mapped is None and not fonts.font_manager.has_font(Path(requested).name):
                         diagnostics.add("FONT_FILE_UNAVAILABLE", style=style_name,
                                         role=role, requested=requested)
             except KeyError:
@@ -370,6 +431,11 @@ def render_document(document, output_path, layout="Model", overwrite=False,
             text = entity.plain_text()
             cjk = {ord(ch) for ch in text if 0x2E80 <= ord(ch) <= 0x3134F}
             old = properties.font
+            if mapped is not None:
+                properties.font = mapped
+                diagnostics.add("FONT_MAPPED", style=style_name, source=old.filename if old else "default",
+                                replacement=mapped.filename)
+                return
             needs_fallback = False
             if cjk:
                 original = frontend.text_engine.get_font(old or frontend.pipeline.default_font_face)
@@ -393,10 +459,26 @@ def render_document(document, output_path, layout="Model", overwrite=False,
         records_before_clip = len(backend.records)
         if region is not None:
             player = backend.player()
-            # Clip actual geometry, including strokes crossing a frame boundary.
-            player.crop_rect(region.extmin, region.extmax,
-                             distance=max(region.size.x, region.size.y) * 1e-6)
-            backend.records = player.records
+            from ezdxf.addons.drawing.recorder import ImageRecord, crop_records_rect
+            from ezdxf.npshapes import NumpyPoints2d
+            from ezdxf.math import Vec2
+            # ezdxf 1.4 drops partially intersecting IMAGE records while cropping.
+            # Keep draw order and exact SVG image clipping instead. The record's
+            # bound is clipped for page fitting; its raster transform stays intact.
+            clipped = []
+            distance = max(region.size.x, region.size.y) * 1e-6
+            for record in player.records:
+                if isinstance(record, ImageRecord):
+                    box = record.bbox()
+                    if region.has_intersection(box):
+                        left, bottom = max(box.extmin.x, region.extmin.x), max(box.extmin.y, region.extmin.y)
+                        right, top = min(box.extmax.x, region.extmax.x), min(box.extmax.y, region.extmax.y)
+                        record.boundary = NumpyPoints2d(Vec2.generate(
+                            [(left, bottom), (right, bottom), (right, top), (left, top)]))
+                        clipped.append(record)
+                else:
+                    clipped.extend(crop_records_rect([record], region, distance))
+            backend.records = clipped
         bounds = backend.player().bbox()
         if not backend.records or not bounds.has_data:
             raise CadError("EMPTY_DRAWING", "The selected region has no visible renderable geometry.",
@@ -430,14 +512,21 @@ def render_document(document, output_path, layout="Model", overwrite=False,
         root = ElementTree.fromstring(rendered)
         if "viewBox" not in root.attrib:
             raise CadError("EMPTY_DRAWING", "The renderer produced an empty preview.")
+        quality = preview_quality(diagnostics, stats, annotation_result, strict)
+        if strict and not quality["complete"]:
+            raise CadError("PREVIEW_INCOMPLETE", "Strict preview refused publication because selected content is missing or substituted.",
+                           {"preview_quality": quality, "diagnostics": diagnostics.result(),
+                            "resources": resources.result()})
         with atomic_output(target, overwrite=overwrite) as temporary:
-            temporary.write_text(rendered, encoding="utf-8")
+            temporary.write_bytes(rendered.encode("utf-8"))
             ElementTree.parse(temporary)
     except CadError:
         raise
     except Exception as exc:
         raise CadError("RENDER_FAILED", "Cannot render this layout.",
                        {"reason": str(exc), "diagnostics": diagnostics.result()}) from exc
+    finally:
+        resources.restore_fonts(fonts)
     for field in ("drawn_types", "skipped_types", "skip_reasons", "drawn_layers", "excluded_layers"):
         stats[field] = dict(sorted(stats[field].items()))
     return {"output": str(target), "format": "svg", "layout": selected_layout.name,
@@ -457,11 +546,12 @@ def render_document(document, output_path, layout="Model", overwrite=False,
             "layer_selection": {"include": layers, "exclude": exclude_layers or [],
                                 "scope": "resolved leaf layers including INSERT layer-0 inheritance"},
             "annotations": annotation_result,
+            "preview_quality": quality, "resources": resources.result(),
             "warnings": [
                 "SVG is fitted to a preview page of at most 420 mm per side; its physical size is not drawing scale.",
                 "Preview uses a 2D top projection; ACIS solids and some 3D features are unsupported.",
                 "Font substitutions use installed font glyph paths; inspect diagnostics for missing glyphs and custom CAD codes.",
-                "External references are not resolved; linked raster images are shown as rectangles.",
+                "Local linked rasters are embedded when found under permitted resource roots; missing rasters and unresolved xrefs remain explicit diagnostics.",
                 "Diagnostic counts include nested entities and repeated text measurement/path operations; samples are bounded."]}
 
 
@@ -471,9 +561,13 @@ def render_drawing(input_path, output_path=None, layout="Model", overwrite=False
                    foreground="cad", lineweight_scale=1.0, font_family=None,
                    hatch_mode="adaptive", layers=None, exclude_layers=None,
                    annotate=None, legend=False, max_annotations=200, width=1600,
-                   sheet=None, manifest=None, output_dir=None, source_info=None):
+                   sheet=None, manifest=None, output_dir=None, source_info=None,
+                   resource_paths=None, font_paths=None, font_map=None,
+                   max_resource_bytes=8 * 1024 * 1024, strict=False):
     """Convert/read a drawing once, then render a layout or clipped region."""
     source = Path(input_path).expanduser().resolve()
+    from .render_assets import validate_asset_options
+    validate_asset_options(resource_paths, font_paths, font_map, max_resource_bytes, strict)
     _validate_options(layout, types, layer, handles, max_entities, max_svg_bytes,
                       bbox, background, foreground, lineweight_scale, font_family, hatch_mode)
     with readable_dxf(source) as dxf_path:
@@ -492,7 +586,9 @@ def render_drawing(input_path, output_path=None, layout="Model", overwrite=False
                                  hatch_mode=hatch_mode, layers=layers, exclude_layers=exclude_layers,
                                  annotate=annotate, legend=legend, max_annotations=max_annotations,
                                  width=width, sheet=sheet, manifest=manifest, output_dir=output_dir,
-                                 source_info=source_info, entities=entities)
+                                 source_info=source_info, entities=entities,
+                                 resource_paths=resource_paths, font_paths=font_paths,
+                                 font_map=font_map, max_resource_bytes=max_resource_bytes, strict=strict)
     result["input"] = str(source)
     if source.suffix.lower() == ".dwg":
         result["warnings"].append("DWG conversion may lose unsupported entities or properties.")

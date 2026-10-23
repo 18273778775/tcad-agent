@@ -51,7 +51,9 @@ def test_assigned_sheet_entities_reuse_document_and_clip_nested_block(tmp_path, 
                                     bbox=[0, 0, 10, 10])
     assert result["entity_count"] == 1
     assert result["render_stats"]["geometry_bounds"] == pytest.approx([0, 5, 10, 5])
-    assert result["render_stats"]["records_before_clip"] > result["render_stats"]["records_after_clip"]
+    # Distant nested leaves are now rejected before rendering, rather than
+    # recorded and discarded after resource/font diagnostics have been emitted.
+    assert result["render_stats"]["records_before_clip"] >= result["render_stats"]["records_after_clip"]
     assert len(doc.modelspace()) == 2
     assert len(block) == 2
 

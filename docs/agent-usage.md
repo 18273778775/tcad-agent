@@ -1,5 +1,13 @@
 # Agent-safe CAD operation
 
+For version 0.4, start with [CAD primitives and reusable worksets](agent-basis.md).
+`--workset` is shared by info/query/index/measure/export/render/area/associate/axes.
+It validates source and subset hashes without parsing the original drawing;
+geometry commands still decode the subset. A sheet and bbox can be combined to
+refine one page. Local raster/font resources and `preview_quality`/`--strict`
+make preview omissions explicit. MLEADER/opt-in polyline leaders and rotated
+straight axes add geometric evidence; engineering meaning remains the caller's job.
+
 TCAD 0.3.0 separates CAD work, complete result files and bounded agent-visible
 JSON. Start with `tcad capabilities` and `tcad schema request`. Normal command
 responses use UTF-8 JSON with one LF, including structured failures.

@@ -85,14 +85,29 @@ def test_semantic_artifacts_cannot_overwrite_original_dwg_after_conversion(opera
 
 
 @pytest.mark.parametrize("command", ["query", "measure", "export", "area", "associate", "axes"])
-def test_sheet_and_bbox_are_mutually_exclusive(operations, tmp_path, command):
+def test_sheet_and_bbox_refine_the_same_selection(operations, tmp_path, command):
     source, manifest, _ = operations
     args = {"input": str(source), "sheet": "sheet-001", "manifest": str(manifest), "bbox": [0, 0, 50, 50]}
     if command == "export":
-        args["output"] = str(tmp_path / "refused.jsonl")
+        args["output"] = str(tmp_path / "refined.jsonl")
     response = execute_request({"command": command, "args": args})
-    assert not response["ok"] and response["error"]["code"] == "INVALID_ARGUMENT"
-    assert not (tmp_path / "refused.jsonl").exists()
+    assert response["ok"], response
+    if command in {"area", "measure"}:
+        area = response["result"].get("union_area", response["result"].get("totals", {}).get("area"))
+        assert area == 100
+
+
+@pytest.mark.parametrize("command", ["query", "measure", "render", "export", "area", "associate", "axes"])
+def test_disjoint_bbox_cannot_escape_selected_sheet(operations, tmp_path, command):
+    source, manifest, _ = operations
+    args = {"input": str(source), "sheet": "sheet-001", "manifest": str(manifest),
+            "bbox": [500, 500, 1100, 1100]}
+    output = tmp_path / ("refused.svg" if command == "render" else "refused.jsonl")
+    if command in {"render", "export"}:
+        args["output"] = str(output)
+    response = execute_request({"command": command, "args": args})
+    assert not response["ok"] and response["error"]["code"] == "EMPTY_SELECTION", response
+    assert not output.exists()
 
 
 def test_explicit_stale_source_revision_is_structured(operations):

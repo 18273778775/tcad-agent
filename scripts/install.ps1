@@ -15,7 +15,7 @@ different installation even inside an activated environment.
 #>
 [CmdletBinding()]
 param(
-    [string]$PackageSource = 'https://codeload.github.com/18273778775/tcad-agent/zip/refs/tags/v0.3.1',
+    [string]$PackageSource = 'https://codeload.github.com/18273778775/tcad-agent/zip/refs/tags/v0.4.0',
     [string]$InstallRoot = '',
     [string]$Python = '',
     [switch]$UsePip,
@@ -29,7 +29,7 @@ if (-not $InstallRoot) {
 $root = [IO.Path]::GetFullPath($InstallRoot)
 $bin = Join-Path $root 'bin'
 $environments = Join-Path $root 'venvs'
-$environment = Join-Path $environments ('0.3.1-' + [Guid]::NewGuid().ToString('N'))
+$environment = Join-Path $environments ('0.4.0-' + [Guid]::NewGuid().ToString('N'))
 foreach ($directory in @($root, $bin, $environments)) {
     $ancestor = $directory
     while ($ancestor) {

@@ -101,8 +101,17 @@ def split_preview_frame(path, layout="Model"):
 def resolve_sheets(document, path, selection, manifest=None, layout="Model", source_info=None):
     from .sheets import discover_sheets
     if manifest:
-        target, value = _read_manifest(manifest)
-        split_sheet = _split_artifact_sheet(path, target, value, layout)
+        if isinstance(manifest, dict):
+            # Internal, already SHA-verified workset selection. Never reuse its
+            # original drawing handles on the exported subset.
+            value = manifest
+            if (not isinstance(value.get("sheets"), list) or len(value["sheets"]) > 200
+                    or any(not isinstance(item, dict) for item in value["sheets"])):
+                raise CadError("INVALID_MANIFEST", "Expected bounded workset sheet metadata.")
+            split_sheet = None
+        else:
+            target, value = _read_manifest(manifest)
+            split_sheet = _split_artifact_sheet(path, target, value, layout)
         source = value.get("source", {})
         digests = {file_sha256(path)}
         if source_info:
@@ -193,18 +202,27 @@ def render_selection(document, path, output, *, sheet=None, manifest=None,
                 "No verified adjacent split manifest identifies this DXF; preview fits visible selected geometry. "
                 "Keep manifest.json beside split DXFs or provide bbox to preserve the intended sheet frame.")
         return result
-    if options.get("bbox") is not None:
-        raise CadError("INVALID_ARGUMENT", "Use sheet or bbox, not both.")
+    if options.get("bbox") is not None and sheet == "all":
+        raise CadError("INVALID_ARGUMENT", "Select one sheet before refining it with bbox; use workset for multiple regions.")
     sheets = resolve_sheets(document, path, sheet, manifest, options.get("layout", "Model"), source_info)
     if sheet != "all":
         if not output or output_dir:
             raise CadError("INVALID_ARGUMENT", "A selected sheet needs output.")
-        options["bbox"] = sheets[0]["bbox"]
+        frame = list(sheets[0]["bbox"])
+        if options.get("bbox") is not None:
+            from .spatial import validated_bbox
+            box = validated_bbox(options["bbox"])
+            frame = [max(frame[0], box[0]), max(frame[1], box[1]),
+                     min(frame[2], box[2]), min(frame[3], box[3])]
+            if frame[0] > frame[2] or frame[1] > frame[3]:
+                raise CadError("EMPTY_SELECTION", "bbox does not intersect the selected sheet.")
+        options["bbox"] = frame
         handles = sheets[0].get("source_handles")
         if handles:
             options["entities"] = [document.entitydb[h] for h in handles]
         result = _one(document, output, overwrite, width, options)
         result["sheet"] = {k: sheets[0].get(k) for k in ("id", "title", "bbox")}
+        result["sheet"]["selection_bbox"] = frame
         if sheets[0].get("frame_context"):
             result["sheet_context"] = dict(sheets[0]["frame_context"], automatic=False)
         return result
@@ -235,12 +253,17 @@ def render_selection(document, path, output, *, sheet=None, manifest=None,
             if total_bytes > 512 * 1024 * 1024:
                 raise CadError("OUTPUT_TOO_LARGE", "Batch redraw exceeds the 512 MiB total artifact budget.")
             records.append({"id": item["id"], "title": item.get("title"), "svg": name,
-                            "png": png, "render": receipt})
+                            "png": png, "thumbnail": png, "bbox": item["bbox"], "render": receipt})
         report = {"source": source_info or {"sha256": file_sha256(path)}, "sheets": records,
                   "sheet_count": len(records), "document_reads": 1}
         (staging / "render-manifest.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        from .sheet_report import write_sheet_report
+        write_sheet_report(report, staging / "index.html", manifest_filename="render-manifest.json")
+        if sum(item.stat().st_size for item in staging.iterdir()) > 512 * 1024 * 1024:
+            raise CadError("OUTPUT_TOO_LARGE", "Batch redraw including report exceeds its total artifact budget.")
         os.rename(staging, target)
     return {"output_dir": str(target), "manifest": str(target / "render-manifest.json"),
+            "html": str(target / "index.html"),
             "sheet_count": len(records), "document_reads": 1}
 
 

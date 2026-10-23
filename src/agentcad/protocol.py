@@ -48,7 +48,11 @@ RENDER_OPTIONS = {"background": {"enum": ["white", "black", "layout"]},
                   "foreground": {"enum": ["cad", "monochrome"]},
                   "hatch_mode": {"enum": ["adaptive", "accurate"]},
                   "lineweight_scale": {"type": "number", "minimum": .05, "maximum": 10},
-                  "font_family": STRING, "layers": STRINGS, "exclude_layers": STRINGS}
+                  "font_family": STRING, "layers": STRINGS, "exclude_layers": STRINGS,
+                  "resource_paths": STRINGS, "font_paths": STRINGS,
+                  "font_map": {"type": "object", "additionalProperties": STRING},
+                  "max_resource_bytes": {"type": "integer", "minimum": 1024, "maximum": 268435456},
+                  "strict": BOOL}
 SHEET_OPTIONS = {
     **FILE_ARGS,
     "frames": {"type": "array", "minItems": 1, "maxItems": 200, "items": {
@@ -186,6 +190,7 @@ COMMAND_SCHEMAS.update({
         "target_types": STRINGS, "label_regex": STRING,
         "method": {"enum": ["inside", "nearest", "leader"]},
         "max_distance": {"type": "number", "exclusiveMinimum": 0}, "one_to_one": BOOL,
+        "leader_layers": STRINGS, "ambiguity_tolerance": {"type": "number", "minimum": 0},
         "bbox": BBOX, "flatten_tolerance": {"type": "number", "exclusiveMinimum": 0},
         "output": STRING, "unmatched_output": STRING, "overwrite": BOOL}, ["input"]),
     "axes": object_schema({**FILE_ARGS, "sheet": STRING, "manifest": STRING,
@@ -197,6 +202,20 @@ COMMAND_SCHEMAS.update({
         "max_axes": {"type": "integer", "minimum": 1, "maximum": 1000},
         "max_intersections": {"type": "integer", "minimum": 1, "maximum": 100000}}, ["input"]),
 })
+COMMAND_SCHEMAS["workset"] = object_schema({
+    **FILE_ARGS, "output_dir": STRING, "manifest": STRING, "sheets": STRINGS,
+    "bboxes": {"type": "array", "items": BBOX, "minItems": 1, "maxItems": 200},
+    "building": STRING, "kind": STRING, "title_regex": STRING,
+    "handles": HANDLES, "layers": STRINGS, "types": STRINGS,
+    "max_entities": {"type": "integer", "minimum": 1, "maximum": 1000000},
+    "max_bytes": {"type": "integer", "minimum": 1, "maximum": 1073741824},
+}, ["input", "output_dir"])
+WORKSET_COMMANDS = {"info", "query", "index", "measure", "export", "render", "area", "associate", "axes"}
+for _name in WORKSET_COMMANDS:
+    _schema = COMMAND_SCHEMAS[_name]
+    _schema["properties"]["workset"] = STRING
+    _schema["required"] = [key for key in _schema["required"] if key != "input"]
+    _schema["anyOf"] = [{"required": ["input"]}, {"required": ["workset"]}]
 OUTPUT_ARGUMENTS = {
     "detail": {"enum": ["summary", "full"], "default": "summary"},
     "fields": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 128},
@@ -213,15 +232,29 @@ for _command_schema in COMMAND_SCHEMAS.values():
     _command_schema["properties"].update(OUTPUT_ARGUMENTS)
 REQUEST_ID = {"type": ["string", "integer", "null"], "maxLength": 256,
               "minimum": -(2 ** 53 - 1), "maximum": 2 ** 53 - 1}
+
+
+def _discovery_args_schema(command_schema):
+    # Share presentation options instead of repeating them for every command.
+    # unevaluatedProperties preserves the strict expanded runtime contract.
+    local = {key: value for key, value in command_schema.items()
+             if key not in {"properties", "additionalProperties"}}
+    local["properties"] = {key: value for key, value in command_schema["properties"].items()
+                           if key not in OUTPUT_ARGUMENTS}
+    return {"allOf": [{"$ref": "#/$defs/output_arguments"}, local],
+            "unevaluatedProperties": False}
+
+
 REQUEST_SCHEMA = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "title": "TCAD agent request",
+    "$defs": {"output_arguments": {"type": "object", "properties": OUTPUT_ARGUMENTS}},
     "oneOf": [
         object_schema(
             {
                 "id": REQUEST_ID,
                 "command": {"const": name},
-                "args": schema,
+                "args": _discovery_args_schema(schema),
             },
             ["command", "args"],
         )
@@ -236,6 +269,7 @@ def capabilities():
 
     return {
         "name": "tcad-agent",
+        "role": "CAD evidence and geometry primitives for agents; downstream quantity rules, spreadsheets and general modelling belong to the calling workflow.",
         "version": __version__,
         "protocol_version": PROTOCOL_VERSION,
         "commands": list(COMMAND_SCHEMAS) + ["batch", "serve"],
@@ -248,6 +282,22 @@ def capabilities():
             "preview": ["svg", "png"],
         },
         "editing": ["layer", "add", "update", "delete", "transform"],
+        "selection_workflow": {
+            "prepare": "tcad workset drawing.dxf --manifest sheets/manifest.json --building 1#楼 --title-regex 基础 --output-dir foundation",
+            "reuse": "tcad measure --workset foundation --handle <handle-from-query-of-subset>",
+            "commands": sorted(WORKSET_COMMANDS),
+            "regions": "Repeated sheet selectors and bboxes are a union; native root filters intersect it. A sheet plus bbox on an analysis command refines that sheet.",
+            "preservation": "Source WCS and units remain unchanged. Crossing native entities stay whole; bbox selection is not geometric clipping.",
+            "freshness": "Workset and original source SHA256 are verified without parsing the original. Source/subset changes return STALE_WORKSET.",
+            "performance": "Preparation decodes the source once; subsequent commands decode only the smaller subset. One read-only request reuses its first unchanged source document.",
+            "identity": "Query the subset's handles; the original-to-exported mapping is stored in workset.json.",
+        },
+        "preview_quality": {
+            "resources": "Local raster resources can be embedded using explicit resource_paths; no automatic network fetches.",
+            "fonts": "Explicit font_paths and style/font file mapping supplement installed fonts; output uses glyph paths.",
+            "report": "preview_quality distinguishes content/fidelity completeness and records missing resources or simplification.",
+            "strict": "strict refuses publication when selected preview content/fidelity is incomplete.",
+        },
         "sheet_workflow": {
             "single_sheet_layers": "tcad render sheets/column-plan.dxf --layers AXES AXIS_LABELS COLUMNS COLUMN_LABELS --output columns.svg",
             "single_sheet_frame": "An adjacent split manifest must identify the exported DXF and its SHA256 before its frame can be reused. Explicit bbox takes priority; a copied DXF without verified frame evidence uses ordinary drawing extents.",
@@ -307,6 +357,7 @@ def capabilities():
             },
         },
         "room_model": {
+            "role": "Controlled acceptance adapter, not a general building modelling or BIM capability.",
             "formats": ["glb", "obj", "dxf"],
             "source": "explicit mapped plan and elevation geometry",
             "verification": "reopened wall faces, floor, ceiling, and opening voids",
@@ -314,15 +365,15 @@ def capabilities():
         },
         "transactions": "One apply plan is atomic; batches are ordered and not atomic.",
         "spatial": {"index": "SQLite R-tree; native INSERT world bounds and instance-specific block text",
-                    "selectors": ["bbox", "sheet with source-bound manifest", "layers", "exclude_layers"],
+                    "selectors": ["bbox", "sheet with source-bound manifest", "workset", "layers", "exclude_layers"],
                     "text_scope": ["layout", "block", "all"],
-                    "warm_scope": "Native base-field query can avoid parsing. Geometry measurement/export/render still parse once per command."},
+                    "warm_scope": "Native base-field query can avoid parsing. Prepared worksets avoid parsing the original source; geometry commands still decode the selected subset."},
         "area": {"modes": ["sum", "union", "overlap"], "backend": "Shapely/GEOS",
                  "units": "drawing-unit squared; explicit linear_unit is required for m2 conversion",
                  "invalid": "reject by default; explicit make_valid records area changes",
                  "curves": "flatten_tolerance in drawing units; approximation is reported"},
         "association": {"methods": ["inside", "nearest", "leader"],
-                        "ties": "ambiguous; no silent choice", "axes": "orthogonal finite LINE grids with source label evidence"},
+                        "ties": "ambiguous; no silent choice", "axes": "finite straight axis grids with source label evidence; inspect unsupported curve diagnostics"},
         "limits": {"default_response_bytes": DEFAULT_OUTPUT_BYTES,
                    "maximum_response_bytes": MAX_OUTPUT_BYTES,
                    "default_input_file_mib": 128, "default_result_file_mib": 64,
@@ -426,6 +477,38 @@ def dispatch(command, args):
             overwrite=args.get("overwrite", False),
             dry_run=args.get("dry_run", False),
         )
+    workset_context = None
+    if args.get("workset"):
+        from .worksets import resolve_workset
+        workset_input = args.pop("workset")
+        subset, workset_context = resolve_workset(workset_input, input_path=args.get("input"))
+        protected = {Path(subset).resolve(), Path(workset_input).expanduser().resolve()}
+        if Path(workset_input).expanduser().is_dir():
+            protected.add(Path(workset_input).expanduser().resolve() / "workset.json")
+        for key in ("source_input", "normalized_input"):
+            if workset_context.get(key):
+                protected.add(Path(workset_context[key]).resolve())
+        for key in ("output", "unmatched_output", "result_file"):
+            value = args.get(key) or presentation.get(key)
+            if value and Path(value).expanduser().resolve() in protected:
+                raise CadError("OUTPUT_CONFLICT", "Output must not replace the active workset drawing or manifest.")
+        args["input"] = str(subset)
+        args.setdefault("layout", workset_context.get("layout", "Model"))
+        selected_sheets = workset_context.pop("selected_sheets", [])
+        regions = workset_context.pop("regions", [])
+        workset_context.get("selection", {}).pop("preview_regions", None)
+        if args.get("sheet"):
+            if args.get("manifest"):
+                raise CadError("INVALID_ARGUMENT", "Workset sheet selection uses its verified internal metadata; omit manifest.")
+            if not selected_sheets:
+                selected_sheets = [{"id": f"region-{i:03d}", "title": f"Explicit region {i}", "bbox": box}
+                                   for i, box in enumerate(regions, 1)]
+            if not selected_sheets:
+                raise CadError("SHEET_NOT_FOUND", "This full-layout workset has no saved sheet or region selectors.")
+            args["manifest"] = {"source": {"sha256": workset_context["artifact_sha256"]},
+                                "layout": workset_context["layout"], "sheets": selected_sheets}
+        elif command == "render" and args.get("bbox") is None and len(regions) == 1:
+            args["bbox"] = regions[0]
     input_path = args.get("input")
     conversion_info = {}
     if command == "apply":
@@ -441,10 +524,26 @@ def dispatch(command, args):
                                          overwrite=args.get("overwrite", False),
                                          dry_run=args.get("dry_run", False))
             return _drawing_dispatch(command, args, input_path, conversion_info)
-    return _drawing_dispatch(command, args, input_path, conversion_info)
+    result = _drawing_dispatch(command, args, input_path, conversion_info)
+    if workset_context is not None and isinstance(result, dict):
+        result["workset"] = workset_context
+    return result
 
 
 def _drawing_dispatch(command, args, input_path, conversion_info):
+    if command == "apply":
+        return _drawing_dispatch_impl(command, args, input_path, conversion_info)
+    from .io import document_read_scope
+    with document_read_scope() as reads:
+        result = _drawing_dispatch_impl(command, args, input_path, conversion_info)
+        if isinstance(result, dict):
+            result["document_io"] = {"document_loads": reads["document_loads"],
+                                     "source_cache_hits": reads["source_cache_hits"],
+                                     "scope": "one_request_first_source_only"}
+        return result
+
+
+def _drawing_dispatch_impl(command, args, input_path, conversion_info):
     from .query import query_entities
     if command != "query":
         from . import engine
@@ -456,7 +555,7 @@ def _drawing_dispatch(command, args, input_path, conversion_info):
         identity = {"path": str(Path(input_path).expanduser().resolve()), "sha256": file_sha256(input_path)}
         if conversion_info:
             identity.update(conversion=conversion_info, normalized_dxf_sha256=file_sha256(path))
-        if command in {"render", "area", "associate", "axes", "sheets", "split"}:
+        if command in {"render", "area", "associate", "axes", "sheets", "split", "workset"}:
             options["source_info"] = identity
         if options.get("sheet") is not None and command != "render":
             from .render_jobs import resolve_sheets
@@ -465,12 +564,18 @@ def _drawing_dispatch(command, args, input_path, conversion_info):
                 options.pop("manifest", None), options.get("layout", "Model"), identity)
             if len(selected) != 1:
                 raise CadError("INVALID_ARGUMENT", "This analysis requires one sheet id or title.")
-            if options.get("bbox"):
-                raise CadError("INVALID_ARGUMENT", "Use sheet or bbox, not both.")
-            options["bbox"] = selected[0]["bbox"]
+            from .spatial import validated_bbox
+            sheet_box = validated_bbox(selected[0]["bbox"])
+            if options.get("bbox") is not None:
+                region = validated_bbox(options["bbox"])
+                sheet_box = [max(sheet_box[0], region[0]), max(sheet_box[1], region[1]),
+                             min(sheet_box[2], region[2]), min(sheet_box[3], region[3])]
+                if sheet_box[0] > sheet_box[2] or sheet_box[1] > sheet_box[3]:
+                    raise CadError("EMPTY_SELECTION", "bbox does not intersect the selected sheet.")
+            options["bbox"] = sheet_box
             if command == "area":
                 options["sheet_id"] = selected[0]["id"]
-        elif command != "render" and options.pop("manifest", None):
+        elif command not in {"render", "workset"} and options.pop("manifest", None):
             raise CadError("INVALID_ARGUMENT", "manifest requires sheet.")
         if command == "info":
             result = engine.inspect_drawing(path, **options)
@@ -504,6 +609,9 @@ def _drawing_dispatch(command, args, input_path, conversion_info):
                 result = discover_drawing(path, **options)
             else:
                 result = split_drawing(path, options.pop("output_dir"), **options)
+        elif command == "workset":
+            from .worksets import create_workset
+            result = create_workset(path, options.pop("output_dir"), **options)
         elif command == "apply":
             result = engine.apply_plan(
                 options.pop("plan"), options.pop("output"), input_path=path, **options
@@ -592,7 +700,7 @@ def execute_request(request):
                 args[key] = int(value)
         if args.get("result_file"):
             artifact = Path(args["result_file"]).expanduser().resolve()
-            for key in ("input", "output", "output_dir", "model", "source", "manifest", "axes", "unmatched_output"):
+            for key in ("input", "output", "output_dir", "model", "source", "manifest", "axes", "unmatched_output", "workset"):
                 value = args.get(key)
                 if isinstance(value, str) and Path(value).expanduser().resolve() == artifact:
                     raise CadError("OUTPUT_CONFLICT", "Result JSON must not replace a drawing or model.")
