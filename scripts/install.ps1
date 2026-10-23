@@ -6,14 +6,18 @@
 .SYNOPSIS
 Install the pinned TCAD CLI into an isolated user environment, without cloning.
 .DESCRIPTION
-Requires Python 3.11+ (or uv). No administrator privileges are required.
+Requires CPython 3.11-3.14 (or uv). No administrator privileges are required.
 Installs a user tcad.cmd shim, updates this process PATH and the user PATH.
 PackageSource and InstallRoot allow explicit offline/local-wheel installation.
+Python selects an explicit interpreter for the pip installation path. By default,
+the Python on PATH is preferred over the Windows launcher, which can select a
+different installation even inside an activated environment.
 #>
 [CmdletBinding()]
 param(
-    [string]$PackageSource = 'https://codeload.github.com/18273778775/tcad-agent/zip/refs/tags/v0.3.0',
+    [string]$PackageSource = 'https://codeload.github.com/18273778775/tcad-agent/zip/refs/tags/v0.3.1',
     [string]$InstallRoot = '',
+    [string]$Python = '',
     [switch]$UsePip,
     [switch]$NoModifyUserPath
 )
@@ -25,7 +29,7 @@ if (-not $InstallRoot) {
 $root = [IO.Path]::GetFullPath($InstallRoot)
 $bin = Join-Path $root 'bin'
 $environments = Join-Path $root 'venvs'
-$environment = Join-Path $environments ('0.3.0-' + [Guid]::NewGuid().ToString('N'))
+$environment = Join-Path $environments ('0.3.1-' + [Guid]::NewGuid().ToString('N'))
 foreach ($directory in @($root, $bin, $environments)) {
     $ancestor = $directory
     while ($ancestor) {
@@ -61,33 +65,61 @@ try {
         $PackageSource = $downloadZip
     }
 
-if (-not $UsePip -and (Get-Command uv -ErrorAction SilentlyContinue)) {
+if (-not $UsePip -and -not $Python -and (Get-Command uv -ErrorAction SilentlyContinue)) {
     & uv venv --python 3.12 $environment
     if ($LASTEXITCODE -ne 0) { throw 'Cannot create the isolated CLI environment.' }
-    $python = Join-Path $environment 'Scripts\python.exe'
-    & uv pip install --python $python $PackageSource
+    $environmentPython = Join-Path $environment 'Scripts\python.exe'
+    & uv pip install --python $environmentPython $PackageSource
 } else {
     $pythonCommand = $null
-    $pythonArguments = @()
-    foreach ($candidate in @('py', 'python', 'python3')) {
-        if (Get-Command $candidate -ErrorAction SilentlyContinue) {
-            $candidateArguments = @()
-            if ($candidate -eq 'py') { $candidateArguments = @('-3') }
-            & $candidate @candidateArguments -c 'import sys; raise SystemExit(sys.version_info < (3, 11))' 2>$null
-            if ($LASTEXITCODE -eq 0) {
-                $pythonCommand = $candidate
-                $pythonArguments = $candidateArguments
+    $candidates = @()
+    if ($Python) {
+        $candidates = @(@{ Command = $Python; Arguments = @() })
+    } else {
+        # setup-python and activated environments put the intended Python on
+        # PATH. `py -3` ignores that selection and may choose an unrelated,
+        # newer interpreter without compatible dependency wheels.
+        foreach ($candidate in @('python', 'python3')) {
+            $candidates += @{ Command = $candidate; Arguments = @() }
+        }
+        foreach ($selector in @('-3.12', '-3.13', '-3.11', '-3.14', '-3')) {
+            $candidates += @{ Command = 'py'; Arguments = @($selector) }
+        }
+    }
+    foreach ($candidate in $candidates) {
+        $command = Get-Command $candidate.Command -ErrorAction SilentlyContinue
+        if (-not $command) { continue }
+        $candidateArguments = $candidate.Arguments
+        try {
+            $probe = & $command @candidateArguments -I -c 'import json, sys; print(json.dumps(dict(executable=sys.executable, major=sys.version_info.major, minor=sys.version_info.minor, implementation=sys.implementation.name)))' 2>$null
+        } catch { continue }
+        if ($LASTEXITCODE -eq 0 -and $probe) {
+            try {
+                $pythonInfo = $probe | Select-Object -Last 1 | ConvertFrom-Json
+            } catch { continue }
+            if ($pythonInfo.implementation -ne 'cpython' -or
+                $pythonInfo.major -ne 3 -or $pythonInfo.minor -lt 11 -or $pythonInfo.minor -gt 14) {
+                continue
+            }
+            # Use the resolved interpreter for the whole installation, rather
+            # than asking a launcher or alias to select Python a second time.
+            $resolvedPython = [string]$pythonInfo.executable
+            if (Test-Path -LiteralPath $resolvedPython -PathType Leaf) {
+                $pythonCommand = $resolvedPython
                 break
             }
         }
     }
-    if (-not $pythonCommand) {
-        throw 'Python 3.11+ or uv is required. Install Python from python.org, then rerun this command.'
+    if (-not $pythonCommand -and $Python) {
+        throw "The selected interpreter must be CPython 3.11-3.14: $Python. TCAD's pinned native dependencies do not provide Python 3.15 wheels. Select Python 3.12 with -Python <path>, or install uv and rerun without -UsePip."
     }
-    & $pythonCommand @pythonArguments -m venv $environment
+    if (-not $pythonCommand) {
+        throw 'CPython 3.11-3.14 or uv is required. TCAD''s pinned native dependencies do not provide Python 3.15 wheels. Install Python 3.12 and select it with -Python <path>, or install uv and rerun without -UsePip.'
+    }
+    & $pythonCommand -m venv $environment
     if ($LASTEXITCODE -ne 0) { throw 'Cannot create the isolated CLI environment.' }
-    $python = Join-Path $environment 'Scripts\python.exe'
-    & $python -m pip install --disable-pip-version-check --no-input --timeout 60 --retries 2 $PackageSource
+    $environmentPython = Join-Path $environment 'Scripts\python.exe'
+    & $environmentPython -m pip install --disable-pip-version-check --no-input --timeout 60 --retries 2 $PackageSource
 }
 if ($LASTEXITCODE -ne 0) { throw 'TCAD installation failed. The previous command shim remains active.' }
 $executable = Join-Path $environment 'Scripts\tcad.exe'

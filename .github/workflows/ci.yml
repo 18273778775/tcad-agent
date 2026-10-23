@@ -34,7 +34,7 @@ jobs:
           TCAD_TEST_DISTRIBUTION: '1'
         run: python -m pytest tests/test_distribution.py -q
       - name: Windows user installer with Python/pip and no uv requirement
-        if: matrix.os == 'windows-latest' && matrix.python == '3.12'
+        if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           $wheel = (Get-ChildItem dist/*.whl | Select-Object -First 1).FullName
@@ -43,6 +43,11 @@ jobs:
           tcad --version
           $response = tcad capabilities | ConvertFrom-Json
           if (-not $response.ok) { throw 'Installed command failed.' }
+          $installedPython = (Get-ChildItem (Join-Path $env:RUNNER_TEMP 'tcad-cli-check/venvs/*/Scripts/python.exe') | Select-Object -First 1).FullName
+          $installedVersion = & $installedPython -c "import sys; print('.'.join(map(str, sys.version_info[:2])))"
+          if ($LASTEXITCODE -ne 0 -or $installedVersion -ne '${{ matrix.python }}') {
+            throw "Installer selected Python $installedVersion instead of the active matrix Python ${{ matrix.python }}."
+          }
       - name: Unix user installer
         if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
         shell: bash

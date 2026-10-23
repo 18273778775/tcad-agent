@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.1 — 2026-10-23
+
+- Fix the Windows pip installer selecting an unrelated global Python launcher
+  instead of the current PATH interpreter. Resolve one absolute interpreter
+  before creating the environment; allow an explicit `-Python` selection.
+- Exercise the pip installer on every Windows CI Python version and verify the
+  installed environment uses the matrix interpreter.
+- Reuse a split drawing's own verified frame for single-file layer previews.
+  Validate the neighboring manifest's DXF identity instead of applying original
+  drawing handles to an exported file. Explicit bbox selections take priority.
+
+See [0.3.1 release notes](docs/releases/0.3.1.md).
+
 ## 0.3.0 — 2026-10-22
 
 - Discover/configure rectangular sheets and title evidence; split to independent

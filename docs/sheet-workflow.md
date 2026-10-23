@@ -101,7 +101,35 @@ I/O，不能将一次成功或提高预算理解为任意复杂图纸的速度�
 
 ## 柱图只保留轴网、轴号、柱及柱号
 
-先通过 `info`、`query` 识别实际图层，再按图幅和多图层白名单重绘：
+常用流程是先 `split`，再对其中一张独立 DXF 选择图层。先通过 `info`、`query`
+识别这张图的实际图层，随后一次生成清晰的 SVG 或 PNG：
+
+```powershell
+.\tcad.ps1 info 'artifacts/project-sheets/柱配筋图.dxf'
+.\tcad.ps1 render 'artifacts/project-sheets/柱配筋图.dxf' --layers AXIS AXIS_LABEL COLUMN COLUMN_LABEL --foreground monochrome --output 'artifacts/columns.svg'
+.\tcad.ps1 render 'artifacts/project-sheets/柱配筋图.dxf' --layers AXIS AXIS_LABEL COLUMN COLUMN_LABEL --width 1600 --output 'artifacts/columns.png'
+```
+
+保留分图目录中的相邻 `manifest.json`。`render` 会根据该 DXF 的准确文件路径及
+`dxf_sha256` 自动识别它所属的唯一图幅，按已验证的原始图框裁切，避免保留完整的
+跨框线段导致纸张缩小或混入其他图幅。读取已拆分 DXF 时使用该文件自己的实体，
+不会把清单中属于原图的 `source_handles` 错用到导出后可能改变的 handle 上。
+结果中的 `sheet` 给出图名和范围，`sheet_context` 记录清单与 SHA 核验，
+`render_stats.drawn_layers` 提供实际绘制图层及操作计数。
+
+文件修改后与清单 SHA 不一致会返回 `STALE_MANIFEST`，应重新分图或明确指定范围。
+显式 `--bbox` 始终优先于相邻清单，可用于该图幅内进一步框选：
+
+```powershell
+.\tcad.ps1 render 'artifacts/project-sheets/柱配筋图.dxf' --bbox 100 200 900 700 --layers AXIS AXIS_LABEL COLUMN COLUMN_LABEL --output 'artifacts/column-detail.svg'
+```
+
+如果只复制单个 DXF 而没有清单，仍能按图层预览；此时按所选可见几何范围适配，
+返回 `sheet_context.scope=layout_extents` 及未验证图框的提示。需要保持原纸张边界
+时同时复制清单及保持其中的文件名，或传入明确的 `--bbox`。不会将任意柱截面
+矩形猜成纸张图框。图层操作不修改 DXF。
+
+也可直接从原始整张图选择某个图幅：
 
 ```powershell
 .\tcad.ps1 query 'project.dxf' --sheet sheet-001 --manifest 'artifacts/project-sheets/manifest.json' --type INSERT --limit 20

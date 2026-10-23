@@ -249,6 +249,8 @@ def capabilities():
         },
         "editing": ["layer", "add", "update", "delete", "transform"],
         "sheet_workflow": {
+            "single_sheet_layers": "tcad render sheets/column-plan.dxf --layers AXES AXIS_LABELS COLUMNS COLUMN_LABELS --output columns.svg",
+            "single_sheet_frame": "An adjacent split manifest must identify the exported DXF and its SHA256 before its frame can be reused. Explicit bbox takes priority; a copied DXF without verified frame evidence uses ordinary drawing extents.",
             "discover": "tcad sheets drawing.dwg --output sheets.json",
             "split_preview_report": "tcad split drawing.dwg --output-dir sheets",
             "outputs": ["manifest.json", "index.html", "independent DXF per frame", "SVG per frame",

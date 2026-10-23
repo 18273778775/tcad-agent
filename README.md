@@ -12,6 +12,8 @@ JSON 事务编辑、SVG 预览，以及通过 LibreDWG 读取 DWG。
 新增按图框分图、图名命名、独立 DXF、裁切 SVG、PNG 缩略图与离线 HTML 图集，
 并实际回读验证后发布成果。支持嵌套块有效图层筛选、面积并集、标注关联和正交轴网。
 见 [分图工作流](docs/sheet-workflow.md) 与 [0.3.0 更新](docs/releases/0.3.0.md)。
+0.3.1 修复 Windows pip 安装时的解释器误选，并优化已拆分单张 DXF 的按层预览；
+见 [0.3.1 更新](docs/releases/0.3.1.md)。
 已跑通长宽高事务修改后的完整验收，见 [房间流程与实测结果](docs/room-workflow.md)。
 
 本项目是在分析当前目录的旧 CAD 看图软件分发包后独立实现的工具。
@@ -33,17 +35,17 @@ JSON 事务编辑、SVG 预览，以及通过 LibreDWG 读取 DWG。
 已有 [uv](https://docs.astral.sh/uv/getting-started/installation/) 和 Git 时，Windows、Linux、macOS 通用，无需手工 clone：
 
 ```sh
-uv tool install --python 3.12 git+https://github.com/18273778775/tcad-agent.git@v0.3.0
+uv tool install --python 3.12 git+https://github.com/18273778775/tcad-agent.git@v0.3.1
 ```
 
 安装后运行 `tcad capabilities` 和 `tcad schema request`。如果 uv 提示命令目录不在 PATH，
 执行 `uv tool update-shell` 后重开终端。已有 pipx 也可直接运行
-`pipx install git+https://github.com/18273778775/tcad-agent.git@v0.3.0`。
+`pipx install git+https://github.com/18273778775/tcad-agent.git@v0.3.1`。
 
 没有 uv 或 Git 的 Windows 用户，在 **Python 3.11+** 的 PowerShell 中执行：
 
 ```powershell
-irm https://raw.githubusercontent.com/18273778775/tcad-agent/v0.3.0/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/18273778775/tcad-agent/v0.3.1/scripts/install.ps1 | iex
 ```
 
 此脚本创建用户隔离环境、安装 `tcad` 命令并更新用户 PATH，当前 PowerShell 立即可用，
@@ -65,7 +67,7 @@ tcad doctor
 
 ```powershell
 New-Item -ItemType Directory -Force artifacts | Out-Null
-Invoke-WebRequest https://raw.githubusercontent.com/18273778775/tcad-agent/v0.3.0/examples/plate.json -OutFile artifacts/plate-plan.json
+Invoke-WebRequest https://raw.githubusercontent.com/18273778775/tcad-agent/v0.3.1/examples/plate.json -OutFile artifacts/plate-plan.json
 tcad apply --plan artifacts/plate-plan.json --output artifacts/plate.dxf
 tcad info artifacts/plate.dxf
 tcad query artifacts/plate.dxf --type CIRCLE --layer HOLES --limit 10
